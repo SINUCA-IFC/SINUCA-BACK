@@ -51,6 +51,7 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
+admin.site.register(models.Category)
 admin.site.register(models.Task)
 admin.site.register(models.User, UserAdmin)
 
