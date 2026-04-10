@@ -2,4 +2,4 @@ __pycache__/
 *.py[cod]
 .pdm-python
 .env
-# db.sqlite3
+db.sqlite3
