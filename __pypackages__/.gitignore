@@ -1,2 +1,17 @@
-*
-!.gitignore
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Virtualenv
+venv/
+.env/
+
+# Django
+*.log
+staticfiles/
+media/
+
+# IDE
+.vscode/
+.idea/
