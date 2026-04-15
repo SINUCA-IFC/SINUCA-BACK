@@ -12,7 +12,6 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from core.views import UserRegistrationView, UserViewSet
 from core.views import TaskViewSet, UserRegistrationView, UserViewSet
 
 router = DefaultRouter()

@@ -1,6 +1,8 @@
 from django.db import models
-from .user import User
+
 from .category import Category
+from .user import User
+
 
 class Task(models.Model):
     class Status(models.IntegerChoices):
@@ -13,7 +15,8 @@ class Task(models.Model):
     category = models.ManyToManyField(Category, related_name="tasks")
     endDate = models.DateField(null=True, blank=True)
     postDate = models.DateField(auto_now_add=True)
-    startDate = models.DateField(null=True, blank=True)    status = models.IntegerField(max_length=1, choices=Status.choices)
+    startDate = models.DateField(null=True, blank=True)    
+    status = models.IntegerField(max_length=1, choices=Status.choices)
     user = models.ManyToManyField(User, related_name='tasks')
     notification = models.BooleanField(default=False)
 
