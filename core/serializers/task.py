@@ -5,7 +5,7 @@ from core.models import Task
 class TaskListSerializer(ModelSerializer):
     class Meta:
         model = Task
-        fields = ['id', 'title', 'category', 'endDate']
+        fields = ['id', 'title', 'category', 'endDate', 'status']
         depth = 1
         
 class TaskDetailSerializer(ModelSerializer):
