@@ -14,13 +14,14 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from core.views import TaskViewSet, UserRegistrationView, UserViewSet
+from core.views import PostViewSet, TaskViewSet, UserRegistrationView, UserViewSet
 from uploader.router import router as uploader_router
 
 router = DefaultRouter()
 
 router.register(r'tarefas', TaskViewSet, basename='tarefas')
 router.register(r'usuarios', UserViewSet, basename='usuarios')
+router.register(r'postagens', PostViewSet, basename='postagens')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
