@@ -17,9 +17,10 @@ class UserViewSet(ModelViewSet):
         if usuario.is_superuser:
             return User.objects.all()
         if 'Organizadores' in usuario_groups:
-            return User.objects.all()
+            return User.objects.filter(groups__name='Alunos')
         if 'Alunos' in usuario_groups:
-            return User.objects.filter(usuario_groups=usuario_groups)
+            return User.objects.filter(groups__name__in=usuario_groups).distinct()
+        return User.objects.none()
 
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
