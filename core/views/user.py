@@ -11,7 +11,17 @@ from core.serializers import UserRegistrationSerializer, UserSerializer
 
 
 class UserViewSet(ModelViewSet):
-    queryset = User.objects.all().order_by('id')
+    def get_queryset(self):
+        usuario = self.request.user
+        usuario_groups = usuario.groups.values_list('name', flat=True)
+        if usuario.is_superuser:
+            return User.objects.all()
+        if 'Organizadores' in usuario_groups:
+            return User.objects.filter(groups__name='Alunos')
+        if 'Alunos' in usuario_groups:
+            return User.objects.filter(groups__name__in=usuario_groups).distinct()
+        return User.objects.none()
+
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
