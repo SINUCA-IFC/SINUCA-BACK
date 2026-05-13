@@ -15,14 +15,14 @@ class Task(models.Model):
     category = models.ManyToManyField(Category, related_name="tasks")
     endDate = models.DateField(null=True, blank=True)
     postDate = models.DateField(auto_now_add=True)
-    startDate = models.DateField(null=True, blank=True)    
+    startDate = models.DateField(null=True, blank=True)
     status = models.IntegerField(max_length=1, choices=Status.choices)
     user = models.ManyToManyField(User, related_name='tasks')
     notification = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
-    
+
     class Meta:
         verbose_name = "Tarefa"
         verbose_name_plural = "Tarefas"
