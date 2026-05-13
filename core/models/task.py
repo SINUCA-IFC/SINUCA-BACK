@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from .category import Category
@@ -9,6 +10,12 @@ class Task(models.Model):
         TO_DO = 1, 'A fazer',
         IN_PROGRESS = 2, 'Em andamento',
         DONE = 3, 'Concluído'
+
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='created_tasks'
+    )
 
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)

@@ -15,24 +15,13 @@ class TaskViewSet(ModelViewSet):
 
         grupos = list(usuario.groups.values_list('name', flat=True))
 
-        tipo_grupo = None
-        pais = None
+        pais = next((g for g in grupos if g not in {'Alunos', 'Organizadores', 'Avaliadores'}), None)
 
-        for grupo in grupos:
-
-            if grupo in {'Alunos', 'Organizadores'}:
-                tipo_grupo = grupo
-
-            else:
-                pais = grupo
-
-        if not tipo_grupo or not pais:
+        if not pais:
             return Task.objects.none()
 
         return Task.objects.filter(
-            user__groups__name=tipo_grupo
-        ).filter(
-            user__groups__name=pais
+            creator__groups__name=pais
         ).distinct()
 
     def get_serializer_class(self):
