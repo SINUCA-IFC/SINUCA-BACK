@@ -1,13 +1,27 @@
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SlugRelatedField
 
 from core.models import User
+from uploader.models import Image
+from uploader.serializers import ImageSerializer
 
 
 class UserSerializer(ModelSerializer):
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'is_active', 'is_staff', 'is_superuser', 'last_login', 'groups']
+        fields = [
+            'id',
+            'email',
+            'name',
+            'is_active',
+            'is_staff',
+            'is_superuser',
+            'last_login',
+            'groups',
+            'foto',
+            'foto_attachment_key',
+        ]
         depth = 1
 
 
@@ -16,7 +30,7 @@ class UserRegistrationSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'password']
+        fields = ['id', 'email', 'name', 'password', 'foto']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
