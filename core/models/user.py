@@ -42,6 +42,15 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User model in the system."""
 
+    foto = models.ForeignKey(
+        Image,
+        related_name='user_foto',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None,
+    )
+
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
     name = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('name'), help_text=_('Username'))
     is_active = models.BooleanField(
@@ -51,15 +60,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=False,
         verbose_name=_('Usuário é da equipe'),
         help_text=_('Indica que este usuário pode acessar o Admin.'),
-    )
-
-    foto = models.ForeignKey(
-        Image,
-        related_name='user_foto',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        default=None,
     )
 
     objects = UserManager()
