@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from .category import Category
@@ -10,19 +11,25 @@ class Task(models.Model):
         IN_PROGRESS = 2, 'Em andamento',
         DONE = 3, 'Concluído'
 
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='created_tasks'
+    )
+
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     category = models.ManyToManyField(Category, related_name="tasks")
     endDate = models.DateField(null=True, blank=True)
     postDate = models.DateField(auto_now_add=True)
-    startDate = models.DateField(null=True, blank=True)    
+    startDate = models.DateField(null=True, blank=True)
     status = models.IntegerField(max_length=1, choices=Status.choices)
     user = models.ManyToManyField(User, related_name='tasks')
     notification = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
-    
+
     class Meta:
         verbose_name = "Tarefa"
         verbose_name_plural = "Tarefas"
