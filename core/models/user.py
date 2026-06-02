@@ -53,6 +53,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=None,
     )
 
+    matricula = models.IntegerField(max_length=10, blank=True, null=True)
+
     gang = models.ForeignKey(Gang, null=True, blank=True, on_delete=models.PROTECT)
 
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
