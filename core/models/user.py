@@ -53,7 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=None,
     )
 
-    matriculation = models.IntegerField(max_length=10, blank=True, null=True)
+    matriculation = models.CharField(max_length=10, blank=True, null=True)
 
     gang = models.ForeignKey(Gang, null=True, blank=True, on_delete=models.PROTECT)
 
