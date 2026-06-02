@@ -40,7 +40,7 @@ class UserRegistrationSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'password', 'foto']
+        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
