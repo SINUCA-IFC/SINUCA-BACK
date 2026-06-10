@@ -12,6 +12,7 @@ from core.serializers import UserRegistrationSerializer, UserSerializer
 
 class UserViewSet(ModelViewSet):
     def get_queryset(self):
+
         usuario = self.request.user
         usuario_groups = usuario.groups.values_list('name', flat=True)
         if usuario.is_superuser:
