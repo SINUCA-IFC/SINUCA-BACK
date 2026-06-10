@@ -12,6 +12,7 @@ from core.serializers import UserRegistrationSerializer, UserSerializer
 
 class UserViewSet(ModelViewSet):
     def get_queryset(self):
+
         usuario = self.request.user
         usuario_groups = usuario.groups.values_list('name', flat=True)
         if usuario.is_superuser:
@@ -19,7 +20,11 @@ class UserViewSet(ModelViewSet):
         if 'Organizadores' in usuario_groups:
             return User.objects.filter(groups__name='Alunos')
         if 'Alunos' in usuario_groups:
-            return User.objects.filter(groups__name__in=usuario_groups).distinct()
+            grupos = list(usuario_groups)
+            pais = next((g for g in grupos if g not in {'Alunos', 'Organizadores', 'Avaliadores'}), None)
+            return User.objects.filter(
+            groups__name=pais
+        ).distinct()
         return User.objects.none()
 
     serializer_class = UserSerializer
