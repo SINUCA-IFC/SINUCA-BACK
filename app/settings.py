@@ -9,12 +9,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Define o modo de execução da aplicação
-MODE = os.getenv('MODE')
 
 # Constrói o caminho base do projeto, usado para definir caminhos relativos
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Segurança e configuração básica
+MODE = os.getenv('MODE')
+BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = ['*']
@@ -31,8 +31,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'cloudinary_storage',
+    'django.contrib.staticfiles',
     'cloudinary',
     'corsheaders',
     'django_extensions',
@@ -108,6 +108,7 @@ USE_TZ = True
 
 # Configurações de arquivos estáticos
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Configurações de arquivos de mídia (App Uploader)
 MEDIA_ENDPOINT = '/media/'
@@ -115,29 +116,24 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
-if MODE == 'DEVELOPMENT':
-    MY_IP = os.getenv('MY_IP', '127.0.0.1')
-    MEDIA_URL = f'http://{MY_IP}:19003/media/'
-else:
-    MEDIA_URL = '/media/'
-    CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STORAGES = {
-        'default': {
-            'BACKEND': 'django.core.files.storage.FileSystemStorage',
-        },
-        'staticfiles': {
-            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-        },
-    }
+MEDIA_URL = '/media/'
+CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Tipo padrão de campo para chaves primárias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações do DRF e drf-spectacular (OpenAPI/Swagger)
 SPECTACULAR_SETTINGS = {
-    'TITLE': '<PROJETO> API',
-    'DESCRIPTION': 'API para o projeto <descreva aqui seu projeto>.',
+    'TITLE': 'SINUCA API',
+    'DESCRIPTION': 'API para o projeto do SINUCA.',
     'VERSION': '1.0.0',
 }
 
