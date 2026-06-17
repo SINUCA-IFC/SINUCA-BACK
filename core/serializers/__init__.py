@@ -3,3 +3,4 @@ from .user import UserRegistrationSerializer, UserSerializer
 from .post import PostSerializer
 from .category import CategorySerializer
 from .gang import GangSerializer
+from .country import CountrySerializer

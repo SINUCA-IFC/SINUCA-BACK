@@ -23,7 +23,7 @@ class Task(models.Model):
     endDate = models.DateField(null=True, blank=True)
     postDate = models.DateField(auto_now_add=True)
     startDate = models.DateField(null=True, blank=True)
-    status = models.IntegerField(max_length=1, choices=Status.choices)
+    status = models.IntegerField(choices=Status.choices)
     user = models.ManyToManyField(User, related_name='tasks')
     notification = models.BooleanField(default=False)
 

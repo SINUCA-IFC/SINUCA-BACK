@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from uploader.models import Image
 
+from .country import Country
 from .gang import Gang
 
 
@@ -56,6 +57,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     matriculation = models.CharField(max_length=10, blank=True, null=True)
 
     gang = models.ForeignKey(Gang, null=True, blank=True, on_delete=models.PROTECT)
+
+    country = models.ForeignKey(
+        Country,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        )
 
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
     name = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('name'), help_text=_('Username'))
