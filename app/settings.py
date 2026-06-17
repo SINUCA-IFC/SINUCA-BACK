@@ -3,20 +3,21 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from django.conf import global_settings
 from dotenv import load_dotenv
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
 # Define o modo de execução da aplicação
-MODE = os.getenv('MODE')
 
 # Constrói o caminho base do projeto, usado para definir caminhos relativos
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Segurança e configuração básica
+MODE = os.getenv('MODE')
+BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False")
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
@@ -115,30 +116,31 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
 
 # Configurações específicas para desenvolvimento, migração e produção
-# if MODE == 'DEVELOPMENT':
-#     MY_IP = os.getenv('MY_IP', '127.0.0.1')
-#     MEDIA_URL = f'http://{MY_IP}:19003/media/'
-# else:
-if True:
+if MODE == 'DEVELOPMENT':
+    MEDIA_URL = 'https://127.0.0.1:800/media/'
+else:
     MEDIA_URL = '/media/'
     CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STORAGES = {
         'default': {
-            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
         },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
 
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
 # Tipo padrão de campo para chaves primárias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configurações do DRF e drf-spectacular (OpenAPI/Swagger)
 SPECTACULAR_SETTINGS = {
-    'TITLE': '<PROJETO> API',
-    'DESCRIPTION': 'API para o projeto <descreva aqui seu projeto>.',
+    'TITLE': 'SINUCA API',
+    'DESCRIPTION': 'API para o projeto do SINUCA.',
     'VERSION': '1.0.0',
 }
 
