@@ -12,20 +12,16 @@ from core.serializers import UserRegistrationSerializer, UserSerializer
 
 class UserViewSet(ModelViewSet):
     def get_queryset(self):
-
         usuario = self.request.user
-        usuario_groups = usuario.groups.values_list('name', flat=True)
         if usuario.is_superuser:
             return User.objects.all()
-        if 'Organizadores' in usuario_groups:
-            return User.objects.filter(groups__name='Alunos')
-        if 'Alunos' in usuario_groups:
-            grupos = list(usuario_groups)
-            pais = next((g for g in grupos if g not in {'Alunos', 'Organizadores', 'Avaliadores'}), None)
-            return User.objects.filter(
-            groups__name=pais
+
+        if not usuario.country:
+            return User.objects.none()
+
+        return User.objects.filter(
+            country=usuario.country
         ).distinct()
-        return User.objects.none()
 
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]

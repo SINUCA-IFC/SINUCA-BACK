@@ -31,6 +31,7 @@ class UserSerializer(ModelSerializer):
             'groups',
             'foto',
             'foto_attachment_key',
+            'country',
         ]
         depth = 1
 
@@ -40,7 +41,7 @@ class UserRegistrationSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation']
+        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country']
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)

@@ -9,19 +9,14 @@ class TaskViewSet(ModelViewSet):
 
     def get_queryset(self):
         usuario = self.request.user
-
         if usuario.is_superuser:
             return Task.objects.all()
 
-        grupos = list(usuario.groups.values_list('name', flat=True))
-
-        pais = next((g for g in grupos if g not in {'Alunos', 'Organizadores', 'Avaliadores'}), None)
-
-        if not pais:
+        if not usuario.country:
             return Task.objects.none()
 
         return Task.objects.filter(
-            creator__groups__name=pais
+        creator__country=usuario.country
         ).distinct()
 
     def get_serializer_class(self):
