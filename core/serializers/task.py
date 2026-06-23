@@ -21,10 +21,6 @@ class TaskSerializer(ModelSerializer):
     class Meta:
         model = Task
         fields = '__all__'
+        read_only_fields = ['creator']
 
-    def create(self, validated_data):
-
-        user = self.context['request'].user
-
-        task = Task.objects.create(creator=user, **validated_data)
-        return task
+    # NOT NULL constraint failed: core_task.creator_id

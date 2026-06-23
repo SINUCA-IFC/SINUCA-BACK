@@ -7,7 +7,8 @@ from core.serializers import TaskDetailSerializer, TaskListSerializer, TaskSeria
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskSerializer
 
-    def get_queryset(self):
+    def get_queryset(self, serializer):
+        serializer.save(creator=self.request.user)
         usuario = self.request.user
         if usuario.is_superuser:
             return Task.objects.all()
