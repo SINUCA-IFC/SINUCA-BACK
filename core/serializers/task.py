@@ -21,10 +21,4 @@ class TaskSerializer(ModelSerializer):
     class Meta:
         model = Task
         fields = '__all__'
-
-    def create(self, validated_data):
-
-        user = self.context['request'].user
-
-        task = Task.objects.create(creator=user, **validated_data)
-        return task
+        read_only_fields = ['creator']
