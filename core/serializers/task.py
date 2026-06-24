@@ -22,5 +22,3 @@ class TaskSerializer(ModelSerializer):
         model = Task
         fields = '__all__'
         read_only_fields = ['creator']
-
-    # NOT NULL constraint failed: core_task.creator_id
