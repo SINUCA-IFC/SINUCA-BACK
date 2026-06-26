@@ -12,8 +12,8 @@ class Schedule(models.Model):
 
     title = models.CharField(max_length=100)
 
-    startDate = models.TimeField()
-    endDate = models.TimeField()
+    startDate = models.DateTimeField()
+    endDate = models.DateTimeField()
 
     location = models.CharField(max_length=100, blank=True, null=True)
 
