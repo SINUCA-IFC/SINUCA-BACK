@@ -4,3 +4,4 @@ from .post import PostSerializer
 from .category import CategorySerializer
 from .gang import GangSerializer
 from .country import CountrySerializer
+from .schedule import ScheduleSerializer
