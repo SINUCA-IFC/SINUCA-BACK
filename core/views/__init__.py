@@ -4,3 +4,4 @@ from .post import PostViewSet
 from .category import CategoryViewSet
 from .gang import GangViewSet
 from .country import CountryViewSet
+from .schedule import ScheduleViewSet

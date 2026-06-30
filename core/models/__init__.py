@@ -4,3 +4,4 @@ from .category import Category
 from .post import Post
 from .gang import Gang
 from .country import Country
+from .schedule import Schedule
