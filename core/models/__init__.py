@@ -5,3 +5,4 @@ from .post import Post
 from .gang import Gang
 from .country import Country
 from .schedule import Schedule
+from .link import Link
