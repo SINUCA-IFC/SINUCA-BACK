@@ -18,6 +18,7 @@ from core.views import (
     CategoryViewSet,
     CountryViewSet,
     GangViewSet,
+    LinkViewSet,
     PostViewSet,
     ScheduleViewSet,
     TaskViewSet,
@@ -35,6 +36,7 @@ router.register(r'categorias', CategoryViewSet, basename='categorias')
 router.register(r'turmas', GangViewSet, basename='turmas')
 router.register(r'paises', CountryViewSet, basename='paises')
 router.register(r'cronogramas', ScheduleViewSet, basename='cronogramas')
+router.register(r'docs', LinkViewSet, basename='docs')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -1,5 +1,7 @@
 from django.db import models
 
+from core.models import Country
+
 
 class Schedule(models.Model):
 
@@ -18,6 +20,11 @@ class Schedule(models.Model):
     location = models.CharField(max_length=100, blank=True, null=True)
 
     description = models.TextField()
+
+    country = models.ManyToManyField(
+        Country,
+        related_name='schedule_country',
+    )
 
     def __str__(self):
         return self.title
