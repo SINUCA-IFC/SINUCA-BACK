@@ -5,5 +5,17 @@ from core.serializers import ScheduleSerializer
 
 
 class ScheduleViewSet(ModelViewSet):
-    queryset = Schedule.objects.order_by('endDate')
+
+    def get_queryset(self):
+        usuario = self.request.user
+        if usuario.is_superuser:
+            return Schedule.objects.all()
+
+        if not usuario.country:
+            return Schedule.objects.none()
+
+        return Schedule.objects.filter(
+        country=usuario.country
+        ).distinct().order_by('startDate')
+
     serializer_class = ScheduleSerializer
