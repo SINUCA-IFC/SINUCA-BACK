@@ -14,7 +14,7 @@ class PostSerializer(ModelSerializer):
         required=False,
         write_only=True,
     )
-    capa = ImageSerializer(required=False, read_only=True)
+    foto = ImageSerializer(required=False, read_only=True)
 
     class Meta:
         model = Post
