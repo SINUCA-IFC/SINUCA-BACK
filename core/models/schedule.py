@@ -36,7 +36,7 @@ class Schedule(models.Model):
 
     docs = models.ManyToManyField(
         Link,
-        related_name='schedule',
+        related_name='schedules',
         blank=True,
     )
 
