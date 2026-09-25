@@ -29,7 +29,6 @@ class Schedule(models.Model):
 
     tipo = models.IntegerField(choices=TIPO.choices, blank=True, null=True)
 
-
     country = models.ManyToManyField(
         Country,
         related_name='schedule_country',
@@ -37,7 +36,7 @@ class Schedule(models.Model):
 
     docs = models.ManyToManyField(
         Link,
-        related_name='schedule_docs',
+        related_name='schedule',
         blank=True,
     )
 
