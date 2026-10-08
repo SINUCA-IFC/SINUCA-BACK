@@ -4,6 +4,7 @@ from core.models import Country
 from uploader.models import Image
 from uploader.serializers import ImageSerializer
 
+
 class CountrySerializer(ModelSerializer):
     flag_attachment_key = SlugRelatedField(
         source='flag',
