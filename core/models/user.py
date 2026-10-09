@@ -2,6 +2,8 @@
 Database models.
 """
 
+import random
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -14,6 +16,11 @@ from uploader.models import Image
 
 from .country import Country
 from .gang import Gang
+
+
+def random_country():
+    ids = list(Country.objects.values_list('id', flat=True))
+    return random.choice(ids) if ids else None
 
 
 class UserManager(BaseUserManager):
@@ -63,7 +70,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         on_delete=models.PROTECT,
-        default=1
+        default=random_country
         )
 
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
