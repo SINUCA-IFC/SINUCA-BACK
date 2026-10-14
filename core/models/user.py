@@ -18,11 +18,6 @@ from .country import Country
 from .gang import Gang
 
 
-def random_country():
-    ids = list(Country.objects.values_list('id', flat=True))
-    return random.choice(ids) if ids else None
-
-
 class UserManager(BaseUserManager):
     """Manager for users."""
 
@@ -52,6 +47,25 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User model in the system."""
 
+    class Role(models.TextChoices):
+        STUDENT = 'student', _('Aluno')
+        EVALUATOR = 'evaluator', _('Avaliador')
+        ORGANIZER = 'organizer', _('Organizador')
+
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
+
+    @property
+    def is_organizer(self):
+        return self.role == self.Role.ORGANIZER
+
+    @property
+    def is_student(self):
+        return self.role == self.Role.STUDENT
+
+    @property
+    def is_evaluator(self):
+        return self.role == self.Role.EVALUATOR
+
     foto = models.ForeignKey(
         Image,
         related_name='user_foto',
@@ -70,7 +84,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         on_delete=models.PROTECT,
-        default=random_country
         )
 
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
