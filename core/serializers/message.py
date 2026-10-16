@@ -10,10 +10,10 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'delegation', 'creator', 'creator_name', 'from_organization',
+        fields = ['id', 'country', 'creator', 'creator_name', 'from_organization',
                   'text', 'created_at', 'is_mine']
         read_only_fields = ['creator', 'created_at']
-        extra_kwargs = {'delegation': {'required': False}}
+        extra_kwargs = {'country': {'required': False}}
 
     def get_is_mine(self, obj):
         return obj.creator_id == self.context['request'].user.id
@@ -23,6 +23,6 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context['request'].user
-        if user.is_organizer and not attrs.get('delegation'):
-            raise serializers.ValidationError({'delegation': 'Informe a delegação.'})
+        if user.is_organizer and not attrs.get('country'):
+            raise serializers.ValidationError({'country': 'Informe a delegação.'})
         return attrs

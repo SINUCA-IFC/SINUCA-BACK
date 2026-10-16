@@ -19,6 +19,7 @@ from core.views import (
     CountryViewSet,
     GangViewSet,
     LinkViewSet,
+    MessageViewSet,
     PostViewSet,
     ScheduleViewSet,
     TaskViewSet,
@@ -37,6 +38,7 @@ router.register(r'turmas', GangViewSet, basename='turmas')
 router.register(r'paises', CountryViewSet, basename='paises')
 router.register(r'cronogramas', ScheduleViewSet, basename='cronogramas')
 router.register(r'docs', LinkViewSet, basename='docs')
+router.register(r'mensagens', MessageViewSet, basename='mensagens')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

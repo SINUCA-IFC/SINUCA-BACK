@@ -16,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ['email', 'name']
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('Personal Info'), {'fields': ('name', 'foto', 'gang')}),
+        (_('Personal Info'), {'fields': ('name', 'foto', 'gang', 'role')}),
         (
             _('Permissions'),
             {
@@ -48,6 +48,7 @@ class UserAdmin(BaseUserAdmin):
                     'is_staff',
                     'is_superuser',
                     'country',
+                    'role'
                 ),
             },
         ),
@@ -62,3 +63,4 @@ admin.site.register(models.Gang)
 admin.site.register(models.Country)
 admin.site.register(models.Schedule)
 admin.site.register(models.Link)
+admin.site.register(models.Message)

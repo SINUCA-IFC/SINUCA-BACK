@@ -22,3 +22,6 @@ class Message(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [models.Index(fields=['country', '-created_at'])]
+
+    def __str__(self):
+        return (f"{self.creator} - {self.created_at}")
