@@ -6,3 +6,4 @@ from .gang import GangViewSet
 from .country import CountryViewSet
 from .schedule import ScheduleViewSet
 from .link import LinkViewSet
+from .message import MessageViewSet
