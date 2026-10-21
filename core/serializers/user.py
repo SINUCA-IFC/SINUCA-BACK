@@ -32,7 +32,9 @@ class UserSerializer(ModelSerializer):
             'foto',
             'foto_attachment_key',
             'country',
+            'role',
         ]
+        read_only_fields = ['role']
         depth = 1
 
 
