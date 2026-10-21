@@ -2,6 +2,8 @@
 Database models.
 """
 
+import random
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -45,6 +47,25 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User model in the system."""
 
+    class Role(models.TextChoices):
+        STUDENT = 'student', _('Aluno')
+        EVALUATOR = 'evaluator', _('Avaliador')
+        ORGANIZER = 'organizer', _('Organizador')
+
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
+
+    @property
+    def is_organizer(self):
+        return self.role == self.Role.ORGANIZER
+
+    @property
+    def is_student(self):
+        return self.role == self.Role.STUDENT
+
+    @property
+    def is_evaluator(self):
+        return self.role == self.Role.EVALUATOR
+
     foto = models.ForeignKey(
         Image,
         related_name='user_foto',
@@ -63,7 +84,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         on_delete=models.PROTECT,
-        default=1
         )
 
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email'), help_text=_('Email'))
