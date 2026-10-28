@@ -1,3 +1,4 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Schedule
@@ -5,6 +6,7 @@ from core.serializers import ScheduleSerializer
 
 
 class ScheduleViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         usuario = self.request.user
