@@ -34,7 +34,7 @@ class UserSerializer(ModelSerializer):
             'country',
             'role',
         ]
-        # Privilégios são gerenciados pelo Django Admin, não pela API de perfis.
+
         read_only_fields = [
             'id',
             'is_active',
