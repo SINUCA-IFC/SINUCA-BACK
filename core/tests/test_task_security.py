@@ -148,7 +148,7 @@ class TaskSecurityTests(APITestCase):
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Task.objects.count(), 1)
 
     def test_organizer_without_global_privileges_cannot_assign_another_country(self):

@@ -2,11 +2,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Link
+from core.permissions import HasDelegationForWrite
 from core.serializers import LinkSerializer
 
 
 class LinkViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasDelegationForWrite]
 
     def get_queryset(self):
         usuario = self.request.user
