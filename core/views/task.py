@@ -2,12 +2,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Task
+from core.permissions import HasDelegationForWrite
 from core.serializers import TaskDetailSerializer, TaskListSerializer, TaskSerializer
 
 
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasDelegationForWrite]
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
