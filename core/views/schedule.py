@@ -2,11 +2,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Schedule
+from core.permissions import HasDelegationForWrite
 from core.serializers import ScheduleSerializer
 
 
 class ScheduleViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasDelegationForWrite]
 
     def get_queryset(self):
         usuario = self.request.user
