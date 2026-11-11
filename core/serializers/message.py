@@ -1,6 +1,24 @@
 from rest_framework import serializers
 
-from core.models import Message
+from core.models import Country, Message
+
+from .country import CountrySerializer
+
+
+class MessageConversationSerializer(CountrySerializer):
+    unread_count = serializers.IntegerField(read_only=True)
+    last_message_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+    class Meta(CountrySerializer.Meta):
+        fields = ['id', 'name', 'political_name', 'flag', 'unread_count', 'last_message_at']
+
+
+class MessageCountrySerializer(serializers.Serializer):
+    country = serializers.PrimaryKeyRelatedField(queryset=Country.objects.all())
+
+
+class MessageReadSerializer(MessageCountrySerializer):
+    last_message_id = serializers.IntegerField(min_value=1)
 
 
 class MessageSerializer(serializers.ModelSerializer):
