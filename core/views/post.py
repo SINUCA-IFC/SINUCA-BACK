@@ -7,5 +7,5 @@ from core.serializers import PostSerializer
 
 class PostViewSet(ModelViewSet):
     permission_classes = [IsOrganizerOrReadOnly]
-    queryset = Post.objects.all()
+    queryset = Post.objects.all().order_by('id')
     serializer_class = PostSerializer

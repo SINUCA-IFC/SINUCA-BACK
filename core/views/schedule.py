@@ -21,6 +21,6 @@ class ScheduleViewSet(ModelViewSet):
 
         return Schedule.objects.filter(
         country=usuario.country
-        ).distinct().order_by('startDate')
+        ).distinct().order_by('startDate', 'id')
 
     serializer_class = ScheduleSerializer

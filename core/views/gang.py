@@ -7,5 +7,5 @@ from core.serializers import GangSerializer
 
 class GangViewSet(ModelViewSet):
     permission_classes = [IsOrganizerOrReadOnly]
-    queryset = Gang.objects.all()
+    queryset = Gang.objects.all().order_by('id')
     serializer_class = GangSerializer

@@ -7,5 +7,5 @@ from core.serializers import CountrySerializer
 
 class CountryViewSet(ModelViewSet):
     permission_classes = [IsOrganizerOrReadOnly]
-    queryset = Country.objects.all()
+    queryset = Country.objects.all().order_by('id')
     serializer_class = CountrySerializer

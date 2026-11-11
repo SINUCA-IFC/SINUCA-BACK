@@ -32,7 +32,7 @@ class UserViewSet(ModelViewSet):
 
         return User.objects.filter(
             country=usuario.country
-        ).distinct()
+        ).distinct().order_by('id')
 
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, HasDelegationForWrite, IsSelfOrOrganizer]
