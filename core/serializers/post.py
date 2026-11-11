@@ -1,16 +1,14 @@
-from rest_framework.serializers import ModelSerializer, SlugRelatedField
+from rest_framework.serializers import ModelSerializer
 
 from core.models import Post
-from uploader.models import Image
+from uploader.fields import OwnedImageField
 from uploader.serializers import ImageSerializer
 
 
 class PostSerializer(ModelSerializer):
 
-    foto_attachment_key = SlugRelatedField(
+    foto_attachment_key = OwnedImageField(
         source='foto',
-        queryset=Image.objects.all(),
-        slug_field='attachment_key',
         required=False,
         write_only=True,
     )

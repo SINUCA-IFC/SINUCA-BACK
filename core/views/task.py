@@ -16,14 +16,14 @@ class TaskViewSet(ModelViewSet):
     def get_queryset(self):
         usuario = self.request.user
         if usuario.is_superuser:
-            return Task.objects.all()
+            return Task.objects.all().order_by('id')
 
         if not usuario.country:
             return Task.objects.none()
 
         return Task.objects.filter(
         creator__country=usuario.country
-        ).distinct()
+        ).distinct().order_by('id')
 
     def get_serializer_class(self):
         if self.action == 'list':
