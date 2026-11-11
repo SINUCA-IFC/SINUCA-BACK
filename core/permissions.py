@@ -20,7 +20,9 @@ class IsSelfOrOrganizer(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         user = request.user
-        return user.is_superuser or user.is_organizer or obj.pk == user.pk
+        if user.is_superuser or obj.pk == user.pk:
+            return True
+        return user.is_organizer and obj.is_student and not obj.is_superuser and not obj.is_staff
 
 
 class HasDelegationForWrite(BasePermission):

@@ -143,3 +143,23 @@ class ResourcePermissionTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(self.link.country.count(), 2)
+
+    def test_organizer_cannot_change_or_delete_privileged_accounts(self):
+        self.client.force_authenticate(self.organizer)
+        another_organizer = User.objects.create_user(email='other-org@example.test', role=User.Role.ORGANIZER)
+        for target in [self.admin, self.staff, another_organizer]:
+            for method in ['patch', 'delete']:
+                with self.subTest(target=target.pk, method=method):
+                    response = getattr(self.client, method)(
+                        reverse('usuarios-detail', args=[target.pk]), {'email': 'hijacked@example.test'}, format='json',
+                    )
+                    self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.email, 'admin@example.test')
+
+    def test_shared_document_remains_usable_when_all_countries_have_access(self):
+        self.client.force_authenticate(self.organizer)
+        response = self.client.patch(
+            reverse('cronogramas-detail', args=[self.schedule.pk]), {'docs': [self.link.pk]}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

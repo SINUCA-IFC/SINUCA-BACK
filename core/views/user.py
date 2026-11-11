@@ -11,6 +11,7 @@ from core.models import User
 from core.permissions import HasDelegationForWrite, IsOrganizer, IsSelfOrOrganizer
 from core.serializers import UserRegistrationSerializer, UserSerializer
 from core.serializers.user import PendingUserSerializer, UserApprovalSerializer
+from uploader.limits import RegistrationRateThrottle
 
 
 class UserViewSet(ModelViewSet):
@@ -80,3 +81,4 @@ class UserRegistrationView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [RegistrationRateThrottle]

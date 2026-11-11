@@ -1,7 +1,9 @@
+from django.db import transaction
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer, SlugRelatedField
+from rest_framework.serializers import ModelSerializer
 
 from core.models import Country, User
+from uploader.fields import LimitedImageField, OwnedImageField
 from uploader.models import Image
 from uploader.serializers import ImageSerializer
 
@@ -14,10 +16,8 @@ class UserSerializer(ModelSerializer):
     def get_approval_pending(self, obj) -> bool:
         return obj.is_student and not obj.is_superuser and obj.country_id is None
 
-    foto_attachment_key = SlugRelatedField(
+    foto_attachment_key = OwnedImageField(
         source='foto',
-        queryset=Image.objects.all(),
-        slug_field='attachment_key',
         required=False,
         write_only=True,
     )
@@ -68,6 +68,7 @@ class PendingUserSerializer(ModelSerializer):
 
 class UserRegistrationSerializer(ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    foto = LimitedImageField(required=False, allow_null=True, write_only=True)
     approval_pending = serializers.SerializerMethodField()
 
     def get_approval_pending(self, obj) -> bool:
@@ -79,9 +80,23 @@ class UserRegistrationSerializer(ModelSerializer):
         read_only_fields = ['id', 'country']
 
     def create(self, validated_data):
+        photo = validated_data.pop('foto', None)
         validated_data['country'] = None
         validated_data['role'] = User.Role.STUDENT
-        return User.objects.create_user(**validated_data)
+        image = None
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(**validated_data)
+                if photo:
+                    image = Image(file=photo, owner=user, size=photo.size)
+                    image.save()
+                    user.foto = image
+                    user.save(update_fields=['foto'])
+        except Exception:
+            if image is not None and image.file._committed:
+                image.file.delete(save=False)
+            raise
+        return user
 
 
 class UserApprovalSerializer(serializers.Serializer):

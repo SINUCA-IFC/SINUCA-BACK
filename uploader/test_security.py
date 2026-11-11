@@ -1,8 +1,10 @@
 import io
 import tempfile
+from pathlib import Path
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import DatabaseError, connection
 from django.test import override_settings
 from PIL import Image as PillowImage
 from rest_framework import status
@@ -37,6 +39,7 @@ class UploadSecurityTests(APITestCase):
     def setUp(self):
         cache.clear()
         temporary_media = tempfile.TemporaryDirectory(prefix='sinuca-upload-test-')
+        self.media_root = Path(temporary_media.name)
         self.addCleanup(temporary_media.cleanup)
         media_settings = override_settings(MEDIA_ROOT=temporary_media.name)
         media_settings.enable()
@@ -128,6 +131,7 @@ class UploadSecurityTests(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Image.objects.count(), 0)
         self.assertFalse(User.objects.filter(email='badphoto@example.test').exists())
+        self.assertEqual([path for path in self.media_root.rglob('*') if path.is_file()], [])
 
     def test_registration_cannot_reuse_existing_image_id(self):
         self.client.force_authenticate(self.user)
@@ -142,13 +146,13 @@ class UploadSecurityTests(APITestCase):
         self.assertFalse(User.objects.filter(email='stolen@example.test').exists())
 
     def test_registration_rate_limit_also_applies_without_photo(self):
-        for index in range(6):
+        for index in range(31):
             response = self.client.post('/api/registro/', {
                 'email': f'registration-{index}@example.test', 'password': 'Synthetic-password-2026!',
             }, format='json')
             with self.subTest(index=index):
-                self.assertEqual(response.status_code, 201 if index < 5 else 429)
-        self.assertEqual(User.objects.filter(email__startswith='registration-').count(), 5)
+                self.assertEqual(response.status_code, 201 if index < 30 else 429)
+        self.assertEqual(User.objects.filter(email__startswith='registration-').count(), 30)
 
     def test_image_attachment_key_is_usable_only_by_its_owner(self):
         self.client.force_authenticate(self.user)
@@ -170,11 +174,50 @@ class UploadSecurityTests(APITestCase):
         uploaded = self.client.post('/api/media/images/', {'file': photo()})
         self.client.force_authenticate(self.organizer)
         response = self.client.post('/api/postagens/', {
-            'title': 'Post', 'description': 'Descrição', 'foto_attachment_key': uploaded.data['attachment_key'],
+            'title': 'Post', 'content': 'Descrição', 'foto_attachment_key': uploaded.data['attachment_key'],
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
         self.assertEqual(Post.objects.count(), 0)
         response = self.client.patch(f'/api/paises/{self.country.pk}/', {
             'flag_attachment_key': uploaded.data['attachment_key'],
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_organizer_can_publish_own_uploaded_image(self):
+        self.client.force_authenticate(self.organizer)
+        uploaded = self.client.post('/api/media/images/', {'file': photo()})
+        response = self.client.post('/api/postagens/', {
+            'title': 'Post', 'content': 'Descrição', 'foto_attachment_key': uploaded.data['attachment_key'],
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Post.objects.get().foto_id, uploaded.data['id'])
+
+    def test_existing_images_remain_visible_in_profile_but_not_in_upload_lists(self):
+        image = Image.objects.create(file='images/legacy.png')
+        self.user.foto = image
+        self.user.save(update_fields=['foto'])
+        self.client.force_authenticate(self.user)
+        profile = self.client.get('/api/usuarios/me/')
+        self.assertEqual(profile.status_code, status.HTTP_200_OK)
+        self.assertIn('images/legacy.png', profile.data['foto']['url'])
+        uploads = self.client.get('/api/media/images/')
+        self.assertEqual(uploads.data['results'], [])
+
+    def test_failed_image_insert_does_not_leave_account_or_file(self):
+        def reject_image_insert(execute, sql, params, many, context):
+            if sql.startswith('INSERT INTO "uploader_image"'):
+                raise DatabaseError('Synthetic image insert failure')
+            return execute(sql, params, many, context)
+
+        for endpoint in ['/api/registro/', '/api/media/images/']:
+            with self.subTest(endpoint=endpoint):
+                self.client.force_authenticate(None if endpoint == '/api/registro/' else self.user)
+                payload = {
+                    'email': 'rollback@example.test', 'password': 'Synthetic-password-2026!', 'foto': photo(),
+                } if endpoint == '/api/registro/' else {'file': photo()}
+                with connection.execute_wrapper(reject_image_insert), self.assertRaises(DatabaseError):
+                    self.client.post(endpoint, payload)
+                self.assertFalse(User.objects.filter(email='rollback@example.test').exists())
+                self.assertEqual(Image.objects.count(), 0)
+                self.assertEqual([path for path in self.media_root.rglob('*') if path.is_file()], [])
