@@ -7,3 +7,4 @@ from .country import Country
 from .schedule import Schedule
 from .link import Link
 from .message import Message
+from .message_read import MessageRead
