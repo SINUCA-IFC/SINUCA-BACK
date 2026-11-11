@@ -4,6 +4,7 @@ from core.models import Message
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    text = serializers.CharField(max_length=2000)
     is_mine = serializers.SerializerMethodField()
     creator_name = serializers.CharField(source='creator.name', read_only=True)
     from_organization = serializers.SerializerMethodField()
