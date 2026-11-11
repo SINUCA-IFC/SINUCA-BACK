@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import User
-from core.permissions import HasDelegationForWrite, IsOrganizer
+from core.permissions import HasDelegationForWrite, IsOrganizer, IsSelfOrOrganizer
 from core.serializers import UserRegistrationSerializer, UserSerializer
 from core.serializers.user import PendingUserSerializer, UserApprovalSerializer
 
@@ -23,8 +23,8 @@ class UserViewSet(ModelViewSet):
                 role=User.Role.STUDENT, country__isnull=True, is_superuser=False, is_active=True,
             ).order_by('id')
 
-        if usuario.is_superuser:
-            return User.objects.all()
+        if usuario.is_superuser or usuario.is_organizer:
+            return User.objects.all().order_by('id')
 
         if not usuario.country:
             return User.objects.none()
@@ -34,7 +34,7 @@ class UserViewSet(ModelViewSet):
         ).distinct()
 
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, HasDelegationForWrite]
+    permission_classes = [IsAuthenticated, HasDelegationForWrite, IsSelfOrOrganizer]
 
     @extend_schema(summary='Alunos aguardando aprovação', responses=PendingUserSerializer(many=True))
     @action(detail=False, methods=['get'], permission_classes=[IsOrganizer])

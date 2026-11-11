@@ -84,7 +84,7 @@ class UserPrivilegeTests(APITestCase):
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assert_student_privileges_unchanged(self.peer)
 
     def test_user_creation_cannot_inject_privileges(self):
@@ -94,15 +94,8 @@ class UserPrivilegeTests(APITestCase):
             format='json',
         )
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = User.objects.get(pk=response.data['id'])
-        self.assertFalse(user.is_staff)
-        self.assertFalse(user.is_superuser)
-        self.assertTrue(user.is_active)
-        self.assertEqual(user.role, User.Role.STUDENT)
-        self.assertIsNone(user.country_id)
-        self.assertIsNone(user.last_login)
-        self.assertFalse(user.groups.exists())
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(User.objects.filter(email='created@example.test').exists())
 
     def test_regular_profile_fields_remain_editable(self):
         response = self.client.patch(
