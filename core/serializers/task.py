@@ -31,6 +31,9 @@ class TaskDetailSerializer(ModelSerializer):
 
 
 class TaskSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        return TaskDetailSerializer(instance, context=self.context).data
+
     def validate_user(self, users):
         request = self.context.get('request')
         actor = getattr(request, 'user', None)
