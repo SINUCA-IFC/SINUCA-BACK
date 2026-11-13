@@ -21,10 +21,12 @@ from core.views import (
     LinkViewSet,
     MessageViewSet,
     PostViewSet,
+    PushSubscriptionView,
     ScheduleViewSet,
     TaskViewSet,
     UserRegistrationView,
     UserViewSet,
+    VapidPublicKeyView,
 )
 from uploader.router import router as uploader_router
 
@@ -61,6 +63,8 @@ urlpatterns = [
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     # Registro de usuários
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
+    path('api/vapid-public-key/', VapidPublicKeyView.as_view(), name='vapid-public-key'),
+    path('api/push-subscriptions/', PushSubscriptionView.as_view(), name='push-subscriptions'),
     # API
     path('api/', include(router.urls)),
 ]
