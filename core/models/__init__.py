@@ -1,5 +1,5 @@
 from .user import User
-from .task import Task
+from .task import Task, TaskOverdueNotification
 from .category import Category
 from .post import Post
 from .gang import Gang

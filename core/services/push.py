@@ -3,6 +3,7 @@ import logging
 
 from django.conf import settings
 from pywebpush import WebPushException, webpush
+from requests.exceptions import RequestException
 
 from core.models import PushSubscription
 
@@ -34,9 +35,11 @@ def send_push_event(payload, *, excluded_endpoint=None, user_ids=None):
                 data=json.dumps(payload),
                 vapid_private_key=settings.VAPID_PRIVATE_KEY,
                 vapid_claims={'sub': settings.VAPID_SUBJECT},
+                timeout=10,
+                ttl=86400,
             )
             delivered += 1
-        except WebPushException as error:
+        except (WebPushException, RequestException, ValueError) as error:
             response_status = getattr(getattr(error, 'response', None), 'status_code', None)
             if response_status in {404, 410}:
                 PushSubscription.objects.filter(pk=subscription.pk).update(active=False)
