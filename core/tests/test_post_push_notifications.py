@@ -75,7 +75,7 @@ class PostPushNotificationTests(APITestCase):
     def test_push_failure_does_not_reject_or_undo_post_creation(self):
         with (
             patch(
-                'core.views.post.send_push_event',
+                'core.services.notifications.send_push_event',
                 side_effect=RuntimeError('Push Service unavailable'),
                 create=True,
             ) as mocked_send,
@@ -90,3 +90,32 @@ class PostPushNotificationTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Post.objects.filter(pk=response.data['id']).exists())
         mocked_send.assert_called_once()
+
+    def admin_post(self, payload, post=None):
+        admin_user = User.objects.create_superuser(email='post-admin@example.test', password='synthetic-password')
+        self.client.force_login(admin_user)
+        url = f'/admin/core/post/{post.pk}/change/' if post else '/admin/core/post/add/'
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.post(url, {**payload, '_save': 'Salvar'})
+
+    def test_admin_creation_notifies_subscribed_users_once_but_edits_do_not(self):
+        with patch('core.services.notifications.send_push_event', return_value=3) as send:
+            response = self.admin_post({'title': 'Criada no admin', 'content': 'Aviso'})
+        self.assertEqual(response.status_code, 302)
+        post = Post.objects.get(title='Criada no admin')
+        send.assert_called_once()
+        self.assertEqual(send.call_args.args[0]['event'], 'post_created')
+        self.assertEqual(send.call_args.args[0]['data']['post_id'], post.pk)
+        with patch('core.services.notifications.send_push_event') as send, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(f'/admin/core/post/{post.pk}/change/', {
+                'title': 'Editada no admin', 'content': 'Revisão', '_save': 'Salvar',
+            })
+        self.assertEqual(response.status_code, 302)
+        send.assert_not_called()
+
+    def test_admin_push_failure_preserves_post(self):
+        with patch('core.services.notifications.send_push_event', side_effect=RuntimeError('offline')) as send:
+            response = self.admin_post({'title': 'Admin preservado', 'content': 'Aviso'})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Post.objects.filter(title='Admin preservado').exists())
+        send.assert_called_once()
