@@ -3,7 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
-from django.conf import global_settings
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 # Carrega as variáveis de ambiente do arquivo .env
@@ -25,6 +25,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = (*default_headers, 'x-push-endpoint')
 
 # Aplicações instaladas
 INSTALLED_APPS = [
@@ -167,3 +168,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Tokens de atualização expiram em 1 dia
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Web Push (VAPID). The private key must only exist in the backend environment.
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@example.com')
