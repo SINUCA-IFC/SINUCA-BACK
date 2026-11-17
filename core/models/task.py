@@ -33,3 +33,16 @@ class Task(models.Model):
     class Meta:
         verbose_name = "Tarefa"
         verbose_name_plural = "Tarefas"
+
+
+class TaskOverdueNotification(models.Model):
+    """Um aviso de atraso por responsável e prazo, independente de leitura."""
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='overdue_notifications')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    deadline = models.DateField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=['task', 'user', 'deadline'], name='unique_task_user_overdue_deadline',
+        )]

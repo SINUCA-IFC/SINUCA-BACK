@@ -7,3 +7,4 @@ from .country import CountryViewSet
 from .schedule import ScheduleViewSet
 from .link import LinkViewSet
 from .message import MessageViewSet
+from .push_subscription import PushSubscriptionView, VapidPublicKeyView

@@ -1,5 +1,15 @@
 from django.db.models import (
-    BigIntegerField, BooleanField, Case, Count, F, Max, OuterRef, Q, Subquery, Value, When,
+    BigIntegerField,
+    BooleanField,
+    Case,
+    Count,
+    F,
+    Max,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+    When,
 )
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
@@ -8,10 +18,11 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from core.models import Country, Message, MessageRead
+from core.models import Country, Message, MessageRead, User
 from core.permissions import IsStudentOrOrganizer
 from core.serializers import MessageSerializer
 from core.serializers.message import MessageConversationSerializer, MessageCountrySerializer, MessageReadSerializer
+from core.services.notifications import schedule_push_event
 
 
 class MessageViewSet(
@@ -43,9 +54,20 @@ class MessageViewSet(
     def perform_create(self, serializer):
         user = self.request.user
         if user.is_organizer:
-            serializer.save(creator=user)
+            message = serializer.save(creator=user)
+            recipients = User.objects.filter(role=User.Role.STUDENT, country_id=message.country_id)
+            target = '/chat'
         else:
-            serializer.save(creator=user, country_id=user.country_id)
+            message = serializer.save(creator=user, country_id=user.country_id)
+            recipients = User.objects.filter(role=User.Role.ORGANIZER)
+            target = f'/chat/{message.country_id}'
+        recipient_ids = list(recipients.filter(is_active=True).exclude(pk=user.pk).values_list('pk', flat=True))
+        schedule_push_event({
+            'event': 'message_created',
+            'title': 'Nova mensagem no chat',
+            'body': 'A organização enviou uma mensagem.' if user.is_organizer else 'Uma delegação enviou uma mensagem.',
+            'data': {'message_id': message.pk, 'country_id': message.country_id, 'url': target},
+        }, user_ids=recipient_ids, excluded_endpoint=self.request.headers.get('X-Push-Endpoint'))
 
     @action(detail=False, methods=['get'], serializer_class=MessageConversationSerializer)
     def conversas(self, request):
