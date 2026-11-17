@@ -28,6 +28,15 @@ def schedule_push_event(payload, *, excluded_endpoint=None, user_ids=None):
     )
 
 
+def post_payload(post):
+    return {
+        'event': 'post_created',
+        'title': 'Nova postagem no mural',
+        'body': post.title,
+        'data': {'post_id': post.pk, 'url': '/mural'},
+    }
+
+
 def task_payload(task, event):
     return {
         'event': event,

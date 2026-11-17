@@ -6,7 +6,7 @@ Implementação baseada na [Unidade 8](https://eduardo-da-silva.github.io/desenv
 
 | Evento | Destinatários | Quando |
 | --- | --- | --- |
-| `post_created` | Todos os usuários ativos inscritos | Nova postagem salva |
+| `post_created` | Todos os usuários ativos inscritos | Nova postagem salva pela API ou pelo Django Admin |
 | `task_assigned` | Responsáveis recém-adicionados | Criação ou edição de tarefa |
 | `task_overdue` | Cada responsável ativo inscrito | Prazo anterior ao dia atual e status diferente de concluída |
 | `message_created` | Organizadores, se aluno enviou; alunos do país destinatário, se organização enviou | Mensagem salva |
@@ -65,6 +65,12 @@ python manage.py makemigrations --check --dry-run
 ```
 
 Testes automatizados simulam o Push Service e verificam destinatários, inscrições, isolamento, falhas, atribuições e atrasos. Para verificar entrega real, publique front/back com VAPID, entre em dois navegadores, autorize notificações e exercite os quatro eventos. Confirme a exclusão da origem e clique nos avisos com sessão ativa e expirada.
+
+Para testar o front local no Firefox, prefira `npm run build` e `npm run preview` em vez do worker de desenvolvimento do Vite. Use dois navegadores normais ou perfis separados, e autorize notificações na origem exibida pelo preview. O front local continua apontando para a API publicada configurada em Axios; as inscrições precisam chegar a esse mesmo backend. Verifique a resposta 200/201 do cadastro e a existência de inscrições ativas.
+
+No Fabroku, confira se `GET /api/vapid-public-key/` devolve uma chave preenchida e se `VAPID_PRIVATE_KEY` está configurada. Procure nos logs `Web Push skipped`, `Web Push delivery failed` e `Falha no envio do evento push`. Não é necessário agendar o comando de atrasos para testar postagens ou chat: esses eventos são imediatos.
+
+A criação pelo Django Admin agora usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente. Esta correção precisa ser publicada no backend para valer no Admin do Fabroku.
 
 ## Mudanças acumuladas desde os CHORE
 
