@@ -89,6 +89,8 @@ As verificações do Django agora validam a configuração VAPID antes de listar
 
 Os avisos ajudam a localizar a falha e não impedem o uso do restante do sistema. A ausência deles confirma apenas a consistência da configuração; não testa a conexão de saída do servidor com o Push Service, nem confirma exibição no dispositivo.
 
+Se o painel não exibir a saída de `showmigrations`, o diagnóstico também aparece nos logs da aplicação quando um envio recebe HTTP 401/403. Depois de publicar o backend e enviar uma mensagem nova, filtre por `Web Push`. A linha `Web Push configuration core.W003`, por exemplo, confirma que as chaves configuradas não correspondem. Se os testes da configuração passarem, aparece `Web Push VAPID configuration is valid`; nesse caso, a rejeição ainda precisa ser investigada na inscrição e na resposta do provedor. Esses registros não incluem valores das chaves, endpoints nem corpo privado das mensagens.
+
 Uma inscrição existente no navegador não prova que foi criada com a chave atual. O front agora compara `subscription.options.applicationServerKey` com a chave pública da API em cada sincronização e renova a inscrição quando forem diferentes. Após atualizar o front, sair e entrar novamente dispara essa verificação. Se o erro continuar com a configuração consistente, consulte os logs de execução do **backend**, no horário de uma mensagem nova, e confira se o destinatário é uma conta ativa inscrita da delegação correta. Logs antigos de deploy do frontend não registram esse envio.
 
 ### Resultado da varredura de 18/11/2026
