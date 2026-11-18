@@ -91,6 +91,28 @@ Os avisos ajudam a localizar a falha e não impedem o uso do restante do sistema
 
 Se o painel não exibir a saída de `showmigrations`, o diagnóstico também aparece nos logs da aplicação quando um envio recebe HTTP 401/403. Depois de publicar o backend e enviar uma mensagem nova, filtre por `Web Push`. A linha `Web Push configuration core.W003`, por exemplo, confirma que as chaves configuradas não correspondem. Se os testes da configuração passarem, aparece `Web Push VAPID configuration is valid`; nesse caso, a rejeição ainda precisa ser investigada na inscrição e na resposta do provedor. Esses registros não incluem valores das chaves, endpoints nem corpo privado das mensagens.
 
+Cada evento com chave privada configurada também registra um resumo em nível INFO, habilitado no console apenas para o serviço de push:
+
+```text
+Web Push result event=message_created attempted=2 accepted=1 failed=1.
+```
+
+`attempted=0` significa que nenhuma inscrição ativa correspondeu aos destinatários após os filtros e a exclusão da origem. `accepted` conta envios aceitos pelo serviço de push, sem confirmar chegada ao navegador, exibição ou leitura. `failed` conta tentativas rejeitadas ou com erro de rede/criptografia. O resumo não contém endpoints, chaves ou conteúdo das notificações.
+
+Para observar a chegada ao navegador, execute no Console do **front**, mantenha a aba aberta e envie uma mensagem pelo outro navegador:
+
+```js
+navigator.serviceWorker.addEventListener('message', async ({ data }) => {
+  if (data?.type !== 'PUSH_RECEIVED') return;
+  console.log('PUSH CHEGOU AO NAVEGADOR:', data.payload?.event);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const registro = await navigator.serviceWorker.ready;
+  console.log('Notificações registradas:', (await registro.getNotifications()).map(n => n.title));
+});
+```
+
+O listener observa apenas eventos novos e desaparece ao recarregar a página. Se houver aceitação no backend, mas nenhum evento no navegador, investigue a conexão do navegador ao serviço de push e o worker ativo. Se chegar `PUSH_RECEIVED`, verifique erros de `showNotification` no console do service worker e a exibição pelo navegador/sistema operacional. A lista de notificações pode estar vazia se o aviso já tiver sido fechado.
+
 Uma inscrição existente no navegador não prova que foi criada com a chave atual. O front agora compara `subscription.options.applicationServerKey` com a chave pública da API em cada sincronização e renova a inscrição quando forem diferentes. Após atualizar o front, sair e entrar novamente dispara essa verificação. Se o erro continuar com a configuração consistente, consulte os logs de execução do **backend**, no horário de uma mensagem nova, e confira se o destinatário é uma conta ativa inscrita da delegação correta. Logs antigos de deploy do frontend não registram esse envio.
 
 ### Resultado da varredura de 18/11/2026
@@ -100,7 +122,7 @@ Uma inscrição existente no navegador não prova que foi criada com a chave atu
 - Foi reproduzida e corrigida a reutilização de uma inscrição vinculada a uma chave VAPID anterior. Os testes comprovam a renovação quando a chave muda e a preservação quando continua igual.
 - O teste de chat agora executa `pywebpush` real com as versões do `requirements.txt`, valida a assinatura JWT e descriptografa o conteúdo nos dois sentidos da conversa. Somente o transporte HTTP externo é substituído; isso não representa uma entrega real pelo Fabroku.
 - O `.env` local não tem VAPID configurado. Essa observação descreve o ambiente local e não determina as variáveis publicadas. O front está apontando para a API publicada; alterações locais no backend precisam ser publicadas para afetar esse teste.
-- A falha específica que ainda ocorre no servidor só pode ser confirmada após verificar a configuração nesse processo e observar uma tentativa de entrega. Os logs fornecidos até aqui são de um deploy do frontend em 27/10.
+- Os logs posteriores do backend confirmaram chave privada ausente e, após sua configuração, par inconsistente (`core.W003`). O painel passou a mostrar uma chave pública diferente da usada pelo processo; após o redeploy de 18/11 às 10:50, a API passou a publicar a mesma chave do arquivo local e o diagnóstico passou a validar o par. A inscrição antiga nº 3 ainda recebeu HTTP 401. As inscrições novas não tiveram rejeições registradas nesse log, mas ainda falta confirmar aceitação e chegada/exibição real.
 
 A criação pelo Django Admin agora usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente. Esta correção precisa ser publicada no backend para valer no Admin do Fabroku.
 
