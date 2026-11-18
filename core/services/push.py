@@ -22,8 +22,10 @@ def send_push_event(payload, *, excluded_endpoint=None, user_ids=None):
     if user_ids is not None:
         subscriptions = subscriptions.filter(user_id__in=user_ids)
 
+    attempted = 0
     delivered = 0
     for subscription in subscriptions.iterator():
+        attempted += 1
         try:
             webpush(
                 subscription_info={
@@ -57,4 +59,11 @@ def send_push_event(payload, *, excluded_endpoint=None, user_ids=None):
                     logger.warning(
                         'Web Push VAPID configuration is valid; verify subscription key and push provider response.'
                     )
+    logger.info(
+        'Web Push result event=%s attempted=%s accepted=%s failed=%s.',
+        payload.get('event', 'unknown'),
+        attempted,
+        delivered,
+        attempted - delivered,
+    )
     return delivered

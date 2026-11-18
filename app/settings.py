@@ -173,3 +173,16 @@ SIMPLE_JWT = {
 VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
 VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
 VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@example.com')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'push_console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'core.services.push': {
+            'handlers': ['push_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
