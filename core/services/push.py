@@ -5,6 +5,7 @@ from django.conf import settings
 from pywebpush import WebPushException, webpush
 from requests.exceptions import RequestException
 
+from core.checks import check_web_push
 from core.models import PushSubscription
 
 logger = logging.getLogger(__name__)
@@ -48,4 +49,12 @@ def send_push_event(payload, *, excluded_endpoint=None, user_ids=None):
                 subscription.pk,
                 response_status,
             )
+            if response_status in {401, 403}:
+                issues = check_web_push(None)
+                for issue in issues:
+                    logger.warning('Web Push configuration %s: %s %s', issue.id, issue.msg, issue.hint)
+                if not issues:
+                    logger.warning(
+                        'Web Push VAPID configuration is valid; verify subscription key and push provider response.'
+                    )
     return delivered
