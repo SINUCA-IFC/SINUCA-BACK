@@ -70,6 +70,36 @@ Para testar o front local no Firefox, prefira `npm run build` e `npm run preview
 
 No Fabroku, confira se `GET /api/vapid-public-key/` devolve uma chave preenchida e se `VAPID_PRIVATE_KEY` está configurada. Procure nos logs `Web Push skipped`, `Web Push delivery failed` e `Falha no envio do evento push`. Não é necessário agendar o comando de atrasos para testar postagens ou chat: esses eventos são imediatos.
 
+### Diagnóstico no Fabroku
+
+Depois de publicar esta versão do backend, execute no painel o comando permitido:
+
+```bash
+python manage.py showmigrations
+```
+
+As verificações do Django agora validam a configuração VAPID antes de listar as migrações. O comando não altera o banco, não envia notificações nem mostra valores das chaves.
+
+| Aviso | Significado |
+| --- | --- |
+| `core.W001` | Uma ou ambas as chaves VAPID estão ausentes no processo do backend. |
+| `core.W002` | A chave privada não pode ser carregada ou não usa a curva P-256. Use base64url RAW/DER ou um caminho PEM existente no servidor. |
+| `core.W003` | A chave pública está inválida ou não corresponde à privada. Configure as duas do mesmo par. |
+| `core.W004` | O contato VAPID não é aceito pela biblioteca. Para e-mail, inclua o prefixo `mailto:`. |
+
+Os avisos ajudam a localizar a falha e não impedem o uso do restante do sistema. A ausência deles confirma apenas a consistência da configuração; não testa a conexão de saída do servidor com o Push Service, nem confirma exibição no dispositivo.
+
+Uma inscrição existente no navegador não prova que foi criada com a chave atual. O front agora compara `subscription.options.applicationServerKey` com a chave pública da API em cada sincronização e renova a inscrição quando forem diferentes. Após atualizar o front, sair e entrar novamente dispara essa verificação. Se o erro continuar com a configuração consistente, consulte os logs de execução do **backend**, no horário de uma mensagem nova, e confira se o destinatário é uma conta ativa inscrita da delegação correta. Logs antigos de deploy do frontend não registram esse envio.
+
+### Resultado da varredura de 18/11/2026
+
+- A API publicada respondeu HTTP 200 com chave pública de 87 caracteres e ponto P-256 válido. Isso não permite conferir a chave privada da hospedagem.
+- Foram revisados cadastro/autenticação da inscrição, associação ao usuário, header de exclusão da origem, destinatários de chat e tarefas, postagens API/Admin, atrasos, payload, worker, clique, permissões, CORS e configuração de publicação.
+- Foi reproduzida e corrigida a reutilização de uma inscrição vinculada a uma chave VAPID anterior. Os testes comprovam a renovação quando a chave muda e a preservação quando continua igual.
+- O teste de chat agora executa `pywebpush` real com as versões do `requirements.txt`, valida a assinatura JWT e descriptografa o conteúdo nos dois sentidos da conversa. Somente o transporte HTTP externo é substituído; isso não representa uma entrega real pelo Fabroku.
+- O `.env` local não tem VAPID configurado. Essa observação descreve o ambiente local e não determina as variáveis publicadas. O front está apontando para a API publicada; alterações locais no backend precisam ser publicadas para afetar esse teste.
+- A falha específica que ainda ocorre no servidor só pode ser confirmada após verificar a configuração nesse processo e observar uma tentativa de entrega. Os logs fornecidos até aqui são de um deploy do frontend em 27/10.
+
 A criação pelo Django Admin agora usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente. Esta correção precisa ser publicada no backend para valer no Admin do Fabroku.
 
 ## Mudanças acumuladas desde os CHORE
