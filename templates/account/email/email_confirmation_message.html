@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Confirme seu e-mail no SINUCA</title></head>
+<body style="margin:0;padding:0;background:#eef3f8;color:#182539;font-family:Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef3f8;">
+    <tr><td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#ffffff;border-radius:16px;border:1px solid #dce6f0;">
+        <tr><td style="padding:22px 28px;background:#01295f;color:#ffffff;border-radius:15px 15px 0 0;font-size:20px;font-weight:bold;letter-spacing:3px;">SINUCA</td></tr>
+        <tr><td style="padding:28px;">
+          <h1 style="margin:0 0 14px;color:#01295f;font-size:25px;line-height:1.25;">Confirme seu e-mail</h1>
+          {% if code %}
+          <p style="margin:0 0 18px;font-size:16px;line-height:1.55;">Digite este código de seis dígitos na tela de cadastro do SINUCA.</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr><td align="center" style="padding:20px 8px;background:#edf4fc;border-radius:10px;color:#01295f;font:bold 32px/1.2 Consolas,monospace;letter-spacing:5px;">{{ code }}</td></tr>
+          </table>
+          <p style="margin:14px 0 0;font-size:14px;line-height:1.5;color:#3c5069;">O código expira em <strong>10 minutos</strong>.</p>
+          {% else %}
+          <p style="margin:0;font-size:16px;line-height:1.55;"><a href="{{ activate_url }}" style="color:#01295f;font-weight:bold;">Confirmar meu e-mail</a></p>
+          {% endif %}
+          <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #dce6f0;color:#3c5069;font-size:14px;line-height:1.5;">Se você não solicitou esta confirmação, pode ignorar esta mensagem.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

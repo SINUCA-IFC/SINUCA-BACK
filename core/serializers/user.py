@@ -7,17 +7,17 @@ from uploader.serializers import ImageSerializer
 
 
 class UserSerializer(ModelSerializer):
+    name = serializers.CharField(required=False, allow_blank=False, allow_null=False, max_length=255)
     foto_attachment_key = SlugRelatedField(
         source='foto',
+        allow_null=True,
         queryset=Image.objects.all(),
         slug_field='attachment_key',
         required=False,
         write_only=True,
     )
-    foto = ImageSerializer(
-        required=False,
-        read_only=True
-    )
+    foto = ImageSerializer(required=False, read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -37,6 +37,7 @@ class UserSerializer(ModelSerializer):
 
         read_only_fields = [
             'id',
+            'email',
             'is_active',
             'is_staff',
             'is_superuser',
@@ -46,14 +47,3 @@ class UserSerializer(ModelSerializer):
             'role',
         ]
         depth = 1
-
-
-class UserRegistrationSerializer(ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country']
-
-    def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
