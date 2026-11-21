@@ -31,7 +31,7 @@ CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = (*default_headers, 'x-session-token')
+CORS_ALLOW_HEADERS = (*default_headers, 'x-session-token', 'x-push-endpoint')
 
 # Aplicações instaladas
 INSTALLED_APPS = [
@@ -135,6 +135,7 @@ ACCOUNT_EMAIL_VERIFICATION_BY_CODE_FORMAT = {
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_TIMEOUT = 600
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_MAX_ATTEMPTS = 3
 ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
+ACCOUNT_RATE_LIMITS = {'signup': '30/m/ip'}
 ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.SignupProfileForm'
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
@@ -192,6 +193,12 @@ STATIC_URL = 'static/'
 MEDIA_ENDPOINT = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 FILE_UPLOAD_PERMISSIONS = 0o640
+UPLOADER_MAX_IMAGE_BYTES = 5 * 1024 * 1024
+UPLOADER_MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+UPLOADER_MAX_IMAGE_DIMENSION = 4096
+UPLOADER_MAX_FILES_PER_USER = 50
+UPLOADER_MAX_BYTES_PER_USER = 100 * 1024 * 1024
+
 
 # Configurações específicas para desenvolvimento, migração e produção
 if MODE == 'DEVELOPMENT':
@@ -240,4 +247,22 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+# Web Push (VAPID). The private key must only exist in the backend environment.
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@example.com')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'push_console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'core.services.push': {
+            'handlers': ['push_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
 }

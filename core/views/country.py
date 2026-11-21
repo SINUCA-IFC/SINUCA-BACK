@@ -1,9 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
 
 from core.models import Country
+from core.permissions import IsOrganizerOrReadOnly
 from core.serializers import CountrySerializer
 
 
 class CountryViewSet(ModelViewSet):
-    queryset = Country.objects.all()
+    permission_classes = [IsOrganizerOrReadOnly]
+    queryset = Country.objects.all().order_by('id')
     serializer_class = CountrySerializer

@@ -1,15 +1,13 @@
-from rest_framework.serializers import ModelSerializer, SlugRelatedField
+from rest_framework.serializers import ModelSerializer
 
 from core.models import Country
-from uploader.models import Image
+from uploader.fields import OwnedImageField
 from uploader.serializers import ImageSerializer
 
 
 class CountrySerializer(ModelSerializer):
-    flag_attachment_key = SlugRelatedField(
+    flag_attachment_key = OwnedImageField(
         source='flag',
-        queryset=Image.objects.all(),
-        slug_field='attachment_key',
         required=False,
         write_only=True,
     )

@@ -107,6 +107,24 @@ class LocalAuthenticationTests(TestCase):
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
+    def test_headless_signup_cannot_assign_delegation_or_privileges(self):
+        country = Country.objects.create(name='Brasil', political_name='Brasil')
+        response = self.post(
+            '/_allauth/browser/v1/auth/signup',
+            {
+                'email': 'pending@example.com', 'password': self.password,
+                'country': country.pk, 'role': 'organizer', 'is_staff': True, 'is_superuser': True,
+                'foto': 123,
+            },
+        )
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+        user = User.objects.get(email='pending@example.com')
+        assert user.country_id is None
+        assert user.foto_id is None
+        assert user.role == User.Role.STUDENT
+        assert not user.is_staff
+        assert not user.is_superuser
+
     def test_original_routes_restored(self):
         for path in ('/api/registro/', '/api/token/', '/api/token/refresh/', '/api/token/verify/'):
             assert self.client.get(path).status_code == HTTPStatus.METHOD_NOT_ALLOWED
@@ -124,8 +142,11 @@ class LocalAuthenticationTests(TestCase):
     def test_profile_creation_and_email_changes_cannot_bypass_allauth(self):
         code = self.signup()
         self.post('/_allauth/browser/v1/auth/email/verify', {'key': code})
-        assert self.post('/api/usuarios/', {'email': 'bypass@example.com'}).status_code == HTTPStatus.METHOD_NOT_ALLOWED
+        assert self.post('/api/usuarios/', {'email': 'bypass@example.com'}).status_code == HTTPStatus.FORBIDDEN
         user = User.objects.get(email='local@example.com')
+        # Profile writes still require the delegation approval enforced by dev.
+        user.country = Country.objects.create(name='Brasil', political_name='Brasil')
+        user.save(update_fields=['country'])
         token = self.client.get('/api/auth/csrf/').json()['csrfToken']
         response = self.client.patch(
             f'/api/usuarios/{user.pk}/',

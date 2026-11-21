@@ -132,6 +132,16 @@ celerybeat.pid
 staticfiles/
 media/
 dump.json
+dump*.json
+*.sql
+*.sql.gz
+*.dump
+*.sqlite3-*
+credentials*.json
+*service-account*.json
+*firebase-adminsdk*.json
+*.pem
+*.key
 core.png
 .venv
 env/

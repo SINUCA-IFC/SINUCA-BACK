@@ -21,7 +21,7 @@ Use localhost tanto no front quanto no back, sem alternar com 127.0.0.1.
 A página demonstrativa da raiz e as páginas de conta do Django foram removidas
 com `HEADLESS_ONLY=True`. As URLs dos provedores OAuth continuam disponíveis.
 A raiz `/` agora retorna 404; o aplicativo deve ser aberto no frontend.
-O backend personalizado de mensagens e os logs antigos foram removidos.
+As notificações Web Push e seus logs da dev permanecem disponíveis.
 Em DEVELOPMENT, o backend padrão do Django exibe códigos apenas no terminal.
 Para deploy em dev, configure SMTP e as demais variáveis de ambiente no painel do provedor de hospedagem.
 Substitua as URLs locais deste contrato pelos endereços do ambiente publicado.
@@ -35,9 +35,12 @@ O frontend não recebe nem gera o código, apenas recebe o que o usuário digita
 {"email":"pessoa@example.com","password":"senha-forte","name":"Nome"}
 ```
 
-Campos opcionais preservados: foto, gang, matriculation, country. Foto, gang e
-country recebem IDs existentes, não 0. Role, staff e superuser não são campos
-do cadastro. O retorno 201 inclui os dados públicos de cadastro e:
+Campos opcionais: gang (ID existente), matriculation e foto. Para enviar foto,
+use multipart/form-data com o arquivo JPEG/PNG, sujeito aos limites de upload;
+IDs de fotos existentes são rejeitados. O arquivo fica associado à nova conta.
+Country, role, staff e superuser não são atribuíveis no cadastro: todo novo
+usuário começa como aluno sem delegação, com approval_pending=true. A confirmação
+de e-mail não substitui a aprovação por organizador. O retorno 201 inclui os dados públicos e:
 
 ```json
 {
@@ -140,7 +143,7 @@ JWT já emitido: ele segue válido até expirar, conforme o mecanismo original.
 ## Verificação
 
 ```powershell
-pdm run python manage.py test core.test_auth core.test_auth_api core.test_google_auth
+pdm run python manage.py test --settings=app.settings_test --noinput
 ```
 
 Os testes automatizados permanecem como proteção de regressão; não são páginas
@@ -182,8 +185,18 @@ O retorno com google_account_confirmation_required oferece /auth/vincular-google
    delegação e permissões anteriores permanecem. Próximos acessos usam o botão
    Google normal, sem repetir vinculação ou exigir senha local novamente.
 
-Não há migração. Não foram alteradas credenciais Google, banco real nem
-credenciais de produção. O código permanece no backend.
+Não há novas migrações de core/uploader. Na instalação, execute `manage.py migrate`
+para aplicar as migrações fornecidas pelo allauth. Contas existentes não são
+marcadas como verificadas automaticamente: o login por senha inicia a confirmação.
+O banco real e as credenciais de produção não são usados pelos testes.
 Testes em core.test_google_auth cobrem senha, CSRF, expiração, conta incorreta,
 conflito, logout, replay, preservação de dados e futuro login Google. A resposta
 externa do Google é simulada; consentimento real precisa de uma conta no navegador.
+
+## CORS e perfil
+
+`FRONTEND_URL` define a origem autorizada, com cookies e os headers
+`X-Session-Token` e `X-Push-Endpoint`. Outras origens não são autorizadas.
+O e-mail do perfil é somente leitura para evitar contornar a confirmação.
+As permissões de organizador, aprovação de alunos e restrições de delegação da
+dev permanecem em vigor, inclusive para contas criadas pelo Google.

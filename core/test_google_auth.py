@@ -65,6 +65,10 @@ class GoogleFrontendTests(TestCase):
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == settings.LOGIN_REDIRECT_URL
         user = User.objects.get(email='google@example.com')
+        assert user.country_id is None
+        assert user.role == User.Role.STUDENT
+        assert not user.is_staff
+        assert not user.is_superuser
         assert user.name == 'Pessoa Google'
         assert not user.has_usable_password()
         assert EmailAddress.objects.get(user=user).verified

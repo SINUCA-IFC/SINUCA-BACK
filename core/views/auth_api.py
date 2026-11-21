@@ -1,8 +1,11 @@
 import json
+from copy import copy
+from io import BytesIO
 
 from allauth.account.models import EmailAddress
 from allauth.headless.account import views as account_views
 from allauth.headless.constants import Client
+from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
@@ -22,6 +25,7 @@ from core.serializers.auth import (
     TokenPairSerializer,
     VerificationSerializer,
 )
+from uploader.limits import RegistrationRateThrottle
 
 SESSION_HEADER = OpenApiParameter(
     'X-Session-Token',
@@ -46,9 +50,19 @@ class AllauthAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    def invoke(self, request, view):
+    def invoke(self, request, view, *, signup_data=None, photo=None):
         # O allauth lê o JSON original e gerencia o código, os limites e a sessão pendente.
-        response = view.as_api_view(client=Client.APP)(request._request)
+        raw_request = request._request
+        if signup_data is not None:
+            # Allauth accepts JSON; preserve multipart upload validation from dev.
+            raw_request = copy(raw_request)
+            raw_request.META = raw_request.META.copy()
+            raw_request._body = json.dumps(signup_data).encode()
+            raw_request._stream = BytesIO(raw_request._body)
+            raw_request.META['CONTENT_TYPE'] = 'application/json'
+            raw_request.META['CONTENT_LENGTH'] = str(len(raw_request._body))
+            raw_request.registration_photo = photo
+        response = view.as_api_view(client=Client.APP)(raw_request)
         if not response.get('Content-Type', '').startswith('application/json'):
             return None, response
         return json.loads(response.content), response
@@ -73,15 +87,22 @@ class AllauthAPIView(APIView):
 
 
 class RegistrationView(AllauthAPIView):
+    throttle_classes = [RegistrationRateThrottle]
+
     @extend_schema(
         request=RegistrationSerializer, responses={201: RegistrationResponseSerializer}, tags=['Autenticação']
     )
+    @transaction.atomic
     def post(self, request):
         # Preserva o corpo para o allauth antes de o parser do DRF consumir o stream.
         request._request.body
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        payload, response = self.invoke(request, account_views.SignupView)
+        data = dict(serializer.validated_data)
+        photo = data.pop('foto', None)
+        if data.get('gang') is not None:
+            data['gang'] = data['gang'].pk
+        payload, response = self.invoke(request, account_views.SignupView, signup_data=data, photo=photo)
         result = self.authentication_response(payload, response)
         if isinstance(result, Response) and result.data.get('email_verification_required'):
             user = User.objects.get(email__iexact=serializer.validated_data['email'])

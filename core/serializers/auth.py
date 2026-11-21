@@ -1,14 +1,21 @@
 from rest_framework import serializers
 
 from core.models import User
+from uploader.fields import LimitedImageField
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    foto = LimitedImageField(required=False, allow_null=True, write_only=True)
+    approval_pending = serializers.SerializerMethodField()
+
+    def get_approval_pending(self, obj) -> bool:
+        return obj.is_student and obj.country_id is None
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country']
+        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country', 'approval_pending']
+        read_only_fields = ['id', 'country']
 
 
 class LoginSerializer(serializers.Serializer):

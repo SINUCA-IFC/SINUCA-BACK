@@ -7,6 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 
 from core import models
+from core.services.notifications import post_payload, schedule_push_event
 
 
 class UserAdmin(BaseUserAdmin):
@@ -16,7 +17,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ['email', 'name']
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('Personal Info'), {'fields': ('name', 'foto', 'gang', 'role')}),
+        (_('Personal Info'), {'fields': ('name', 'foto', 'gang', 'country', 'role')}),
         (
             _('Permissions'),
             {
@@ -55,10 +56,17 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
+class PostAdmin(admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:
+            schedule_push_event(post_payload(obj), excluded_endpoint=request.headers.get('X-Push-Endpoint'))
+
+
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Task)
 admin.site.register(models.Category)
-admin.site.register(models.Post)
+admin.site.register(models.Post, PostAdmin)
 admin.site.register(models.Gang)
 admin.site.register(models.Country)
 admin.site.register(models.Schedule)

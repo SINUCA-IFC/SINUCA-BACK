@@ -1,4 +1,4 @@
-from .user import UserViewSet
+from .user import UserRegistrationView, UserViewSet
 from .task import TaskViewSet
 from .post import PostViewSet
 from .category import CategoryViewSet
@@ -7,3 +7,4 @@ from .country import CountryViewSet
 from .schedule import ScheduleViewSet
 from .link import LinkViewSet
 from .message import MessageViewSet
+from .push_subscription import PushSubscriptionView, VapidPublicKeyView
