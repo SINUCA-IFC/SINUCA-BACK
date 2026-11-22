@@ -6,9 +6,12 @@ O sistema apoia a organização do evento e a comunicação com os participantes
 
 A interface web está no [SINUCA-FRONT](https://github.com/SINUCA-IFC/SINUCA-FRONT).
 
+Veja o [contrato de autenticação](docs/django-allauth.md) para Google, JWT e confirmação de e-mail por código de 6 dígitos.
+
 ## Funcionalidades
 
-- Autenticação JWT com login por e-mail.
+- Autenticação JWT com login por e-mail e Google.
+- Confirmação obrigatória de e-mail por código de 6 dígitos.
 - Cadastro público de alunos.
 - Aprovação com atribuição de delegação pela organização.
 - Perfis de aluno, avaliador e organizador.
@@ -29,7 +32,8 @@ O perfil de avaliador existe no modelo de usuário, mas um módulo de atribuiç�
 | --- | --- |
 | Python / Django | Aplicação e modelos |
 | Django REST Framework | API REST |
-| Simple JWT | Autenticação |
+| Simple JWT | Autenticação JWT |
+| django-allauth | Cadastro, confirmação de e-mail e Google |
 | drf-spectacular | Documentação OpenAPI |
 | SQLite / PostgreSQL | Banco de dados |
 | Cloudinary | Armazenamento de mídia em produção |
@@ -93,6 +97,7 @@ MODE=DEVELOPMENT
 DEBUG=True
 SECRET_KEY=substitua-por-uma-chave-local-aleatoria
 DATABASE_URL=sqlite:///db.sqlite3
+FRONTEND_URL=http://localhost:5173
 ```
 
 Gere uma chave com:
@@ -107,6 +112,7 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 | `DEBUG` | Ativa depuração; padrão: `False` |
 | `SECRET_KEY` | Chave do Django |
 | `DATABASE_URL` | Conexão com o banco |
+| `FRONTEND_URL` | Origem do frontend para CORS, CSRF e retornos da autenticação |
 | `CLOUDINARY_URL` | Configuração de mídia fora do modo de desenvolvimento |
 | `VAPID_PUBLIC_KEY` | Chave pública Web Push |
 | `VAPID_PRIVATE_KEY` | Chave privada VAPID ou caminho absoluto do PEM |
@@ -116,48 +122,38 @@ Mantenha senhas e chaves privadas fora de commits.
 
 ### Mídia em desenvolvimento
 
-Em `app/settings.py`, o ramo `MODE == 'DEVELOPMENT'` define atualmente:
-
-```python
-MEDIA_URL = 'https://127.0.0.1:800/media/'
-```
-
-Para servir uploads com o servidor local na porta 8000, ajuste para:
-
-```python
-MEDIA_URL = 'http://127.0.0.1:8000/media/'
-```
-
-Essa URL está definida no código e não é corrigida apenas pela criação do `.env`.
+Em desenvolvimento, `MEDIA_URL` é `/media/`. O servidor local disponibiliza os uploads nesse caminho.
 
 ## Banco de dados e execução
 
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py runserver 127.0.0.1:8000
+python manage.py runserver localhost:8000
 ```
 
 A autenticação do superusuário utiliza e-mail.
 
 | Endereço | Finalidade |
 | --- | --- |
-| http://127.0.0.1:8000/admin/ | Administração |
-| http://127.0.0.1:8000/api/ | Raiz da API |
-| http://127.0.0.1:8000/api/doc/ | Swagger UI |
-| http://127.0.0.1:8000/api/redoc/ | ReDoc |
-| http://127.0.0.1:8000/api/schema/ | Esquema OpenAPI |
+| http://localhost:8000/admin/ | Administração |
+| http://localhost:8000/api/ | Raiz da API |
+| http://localhost:8000/api/doc/ | Swagger UI |
+| http://localhost:8000/api/redoc/ | ReDoc |
+| http://localhost:8000/api/schema/ | Esquema OpenAPI |
 
 Cadastre países, turmas e demais dados iniciais pelo Admin.
 
-Para integrar o front-end local, configure o Axios para utilizar `http://127.0.0.1:8000/api`.
+Para integrar o front-end local, configure o Axios para utilizar `http://localhost:8000/api`.
 
 ## Autenticação
 
-Solicite os tokens utilizando uma conta existente:
+Veja o [contrato de autenticação](docs/django-allauth.md) para Google, JWT e confirmação de e-mail por código de 6 dígitos.
+
+Solicite os tokens utilizando uma conta existente com e-mail confirmado:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/token/ \
+curl -X POST http://localhost:8000/api/token/ \
   -H "Content-Type: application/json" \
   -d '{"email":"usuario@example.com","password":"sua-senha"}'
 ```
@@ -256,7 +252,7 @@ A suíte contém testes de permissões, aprovação, mensagens, tarefas, pagina�
 ```bash
 pdm install
 pdm run python manage.py migrate
-pdm run python manage.py runserver 127.0.0.1:8000
+pdm run python manage.py runserver localhost:8000
 pdm run test
 pdm run check
 ```
@@ -298,12 +294,43 @@ Configure no ambiente de destino:
 - `SECRET_KEY` própria.
 - `DEBUG=False`.
 - `DATABASE_URL`.
-- `MODE` diferente de `DEVELOPMENT`.
+- `MODE=DEPLOY`.
 - `CLOUDINARY_URL` para o armazenamento padrão de produção.
 - Chaves VAPID, se forem utilizadas notificações.
 - HTTPS.
 
-As configurações de hosts e CORS estão em `app/settings.py` e atualmente são permissivas. Ajuste-as aos domínios da implantação.
+As configurações estão em `app/settings.py`. Restrinja `ALLOWED_HOSTS` aos hosts da implantação; CORS e CSRF utilizam a origem definida por `FRONTEND_URL`.
+
+## Deploy em dev
+
+Configure as variáveis de ambiente diretamente no painel do provedor de hospedagem.
+Use `MODE=DEPLOY` e `DEBUG=False`; `DEVELOPMENT`
+é reservado à execução local. O banco remoto deve ser PostgreSQL, com backup
+antes das migrações de um banco existente. Não envie `.env`, banco SQLite,
+dump, mídia local ou `.secrets` para o servidor.
+
+Configure SMTP e um remetente autorizado: a confirmação obrigatória de e-mail
+depende de entrega real. No Google Cloud, cadastre o callback
+`https://<host-do-backend>/accounts/google/login/callback/`.
+`FRONTEND_URL` deve ser a origem HTTPS exata do frontend, sem caminho.
+Para autenticação por cookies, prefira front e API no mesmo site (subdomínios
+do mesmo domínio); domínios distintos exigem configuração adicional de cookies.
+
+O build é `bash build.sh` e o início é `gunicorn app.wsgi --log-file -`.
+O build instala dependências, coleta estáticos e aplica migrações.
+O `Procfile` também oferece migração na fase release para provedores que a suportam.
+
+Valide com as variáveis do ambiente configuradas:
+
+```sh
+python manage.py check --deploy
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+Após o deploy, valide cadastro, recebimento do código por e-mail, login e Google.
+Os testes automatizados de autenticação permanecem no projeto como proteção
+contra regressões e não são executados pelo servidor web.
 
 ## Referências
 

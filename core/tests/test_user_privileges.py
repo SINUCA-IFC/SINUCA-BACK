@@ -1,4 +1,6 @@
+from allauth.account.models import EmailAddress
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -26,6 +28,8 @@ class UserPrivilegeTests(APITestCase):
         cls.group = Group.objects.create(name='Grupo restrito')
 
     def setUp(self):
+        cache.clear()
+        EmailAddress.objects.create(user=self.student, email=self.student.email, verified=True, primary=True)
         response = self.client.post(
             reverse('token_obtain_pair'),
             {'email': self.student.email, 'password': 'Profile-test-password-2026!'},
@@ -33,6 +37,7 @@ class UserPrivilegeTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
+        self.initial_login_times = dict(User.objects.values_list('pk', 'last_login'))
 
     def protected_payload(self):
         return {
@@ -53,7 +58,7 @@ class UserPrivilegeTests(APITestCase):
         self.assertEqual(user.role, User.Role.STUDENT)
         self.assertEqual(user.country_id, self.country.pk)
         self.assertFalse(user.groups.exists())
-        self.assertIsNone(user.last_login)
+        self.assertEqual(user.last_login, self.initial_login_times[user.pk])
 
     def test_patch_cannot_promote_self_or_unlock_other_delegations(self):
         response = self.client.patch(
@@ -97,6 +102,21 @@ class UserPrivilegeTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(User.objects.filter(email='created@example.test').exists())
 
+    def test_organizer_can_still_create_pending_user_with_valid_email(self):
+        organizer = User.objects.create_user(email='organizer@example.test', role=User.Role.ORGANIZER)
+        self.client.force_authenticate(organizer)
+        response = self.client.post(
+            reverse('usuarios-list'),
+            {'email': 'managed@example.test', 'name': 'Managed student', 'is_superuser': True},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(email='managed@example.test')
+        self.assertIsNone(user.country_id)
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(user.role, User.Role.STUDENT)
+        self.assertFalse(EmailAddress.objects.filter(user=user, verified=True).exists())
+
     def test_regular_profile_fields_remain_editable(self):
         response = self.client.patch(
             reverse('usuarios-detail', args=[self.student.pk]),
@@ -107,7 +127,7 @@ class UserPrivilegeTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.student.refresh_from_db()
         self.assertEqual(self.student.name, 'Nome atualizado')
-        self.assertEqual(self.student.email, 'updated@example.test')
+        self.assertEqual(self.student.email, 'student@example.test')
         self.assert_student_privileges_unchanged(self.student)
 
     def test_profile_still_returns_administrative_fields_for_reading(self):
