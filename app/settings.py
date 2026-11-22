@@ -5,6 +5,7 @@ from pathlib import Path
 import dj_database_url
 from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -21,9 +22,16 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv('DEBUG', 'False').strip().lower() in {'true', '1', 'yes', 'on'}
 DEFAULT_EXCEPTION_REPORTER_FILTER = 'app.debug.SensitiveSettingsFilter'
 ALLOWED_HOSTS = ['*']
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').strip().rstrip('/')
 SESSION_COOKIE_SECURE = FRONTEND_URL.startswith('https://')
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+# Enable only when the frontend and API are on different sites (e.g. Vercel/IFC).
+# Exact-origin CORS and CSRF validation remain required.
+AUTH_CROSS_SITE_COOKIES = os.getenv('AUTH_CROSS_SITE_COOKIES', 'False').strip().lower() in {'true', '1', 'yes', 'on'}
+if AUTH_CROSS_SITE_COOKIES and not SESSION_COOKIE_SECURE:
+    raise ImproperlyConfigured('AUTH_CROSS_SITE_COOKIES requires an HTTPS FRONTEND_URL.')
+SESSION_COOKIE_SAMESITE = 'None' if AUTH_CROSS_SITE_COOKIES else 'Lax'
+CSRF_COOKIE_SAMESITE = SESSION_COOKIE_SAMESITE
 # Enable only behind a proxy that overwrites this header.
 if os.getenv('TRUST_PROXY_HTTPS', 'False').lower() == 'true':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

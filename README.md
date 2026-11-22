@@ -341,3 +341,19 @@ contra regressões e não são executados pelo servidor web.
 ## Licença
 
 O `pyproject.toml` declara licença MIT.
+
+## Vercel / Fabroku
+
+Set these environment variables in the backend deployment panel, then restart:
+
+```dotenv
+FRONTEND_URL=https://sinuca-front-pedro-gabriel-goncalves-projects.vercel.app
+AUTH_CROSS_SITE_COOKIES=True
+```
+
+FRONTEND_URL is the exact allowed CORS/CSRF origin and Google return destination.
+AUTH_CROSS_SITE_COOKIES enables SameSite=None with Secure cookies for this
+cross-site deployment. It requires HTTPS and does not bypass CSRF or authorize
+other origins. Browser third-party cookie blocking can still prevent OAuth;
+a frontend hosted on the same site as the API avoids that restriction.
+When moving the frontend, update FRONTEND_URL and review this cookie setting.
