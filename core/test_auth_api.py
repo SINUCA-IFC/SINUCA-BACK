@@ -3,7 +3,7 @@ import re
 import time
 from contextlib import redirect_stdout
 from http import HTTPStatus
-from smtplib import SMTPAuthenticationError
+from smtplib import SMTPAuthenticationError, SMTPServerDisconnected
 from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
@@ -13,6 +13,7 @@ from django.test import Client, TestCase, override_settings
 from drf_spectacular.generators import SchemaGenerator
 
 from core.models import User
+from core.views.auth_api import log_smtp_failure
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
@@ -72,6 +73,21 @@ class JWTAuthenticationTests(TestCase):
         code = re.search(r'(?<!\d)\d{6}(?!\d)', mail.outbox[-1].body).group()
         response = self.post('/api/registro/confirmar-email/', {'key': code}, response.json()['session_token'])
         assert response.status_code == HTTPStatus.OK, response.content
+
+    @override_settings(
+        EMAIL_HOST='smtp.gmail.com', EMAIL_PORT=465, EMAIL_USE_TLS=False,
+        EMAIL_USE_SSL=True, EMAIL_HOST_USER='sinuca.ifc.no.reply@gmail.com',
+        EMAIL_HOST_PASSWORD='sensitive secret', EMAIL_TIMEOUT=15,
+    )
+    def test_smtp_diagnostic_reports_transport_and_timeout_without_secrets(self):
+        with self.assertLogs('core.auth.password', level='ERROR') as captured:
+            log_smtp_failure(SMTPServerDisconnected('Connection unexpectedly closed: timed out'))
+        diagnostic = '\n'.join(captured.output)
+        assert 'reason=timeout' in diagnostic
+        assert 'port=465 tls=False ssl=True' in diagnostic
+        assert 'password_has_whitespace=True' in diagnostic
+        assert 'sensitive secret' not in diagnostic
+        assert 'sinuca.ifc.no.reply@gmail.com' not in diagnostic
 
     def test_wrong_password_does_not_send_verification(self):
         User.objects.create_user(**self.credentials)

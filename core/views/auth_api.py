@@ -3,10 +3,12 @@ import logging
 import traceback
 from copy import copy
 from io import BytesIO
+from smtplib import SMTPException
 
 from allauth.account.models import EmailAddress
 from allauth.headless.account import views as account_views
 from allauth.headless.constants import Client
+from django.conf import settings
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -28,6 +30,29 @@ from core.serializers.auth import (
     VerificationSerializer,
 )
 from uploader.limits import RegistrationRateThrottle
+
+def log_smtp_failure(exc):
+    # Report configuration shape, never credentials or raw server messages.
+    password = settings.EMAIL_HOST_PASSWORD or ''
+    username = settings.EMAIL_HOST_USER or ''
+    message = str(exc).lower()
+    reason = 'disconnected_or_rejected'
+    if 'timed out' in message or 'timeout' in message:
+        reason = 'timeout'
+    elif 'reset' in message:
+        reason = 'connection_reset'
+    elif 'unexpectedly closed' in message:
+        reason = 'connection_closed'
+    logging.getLogger('core.auth.password').error(
+        'PASSWORD_LOGIN_SMTP reason=%s host_is_gmail=%s port=%s tls=%s ssl=%s '
+        'timeout=%s sender_matches_expected=%s username_outer_whitespace=%s '
+        'password_present=%s password_has_whitespace=%s gmail_app_password_length_ok=%s',
+        reason, settings.EMAIL_HOST == 'smtp.gmail.com', settings.EMAIL_PORT,
+        settings.EMAIL_USE_TLS, settings.EMAIL_USE_SSL, settings.EMAIL_TIMEOUT,
+        username == 'sinuca.ifc.no.reply@gmail.com', username != username.strip(),
+        bool(password), any(char.isspace() for char in password), len(password) == 16,
+    )
+
 
 SESSION_HEADER = OpenApiParameter(
     'X-Session-Token',
@@ -126,6 +151,8 @@ class TokenLoginView(AllauthAPIView):
             stage = 'jwt_response'
             return self.authentication_response(payload, response)
         except Exception as exc:
+            if isinstance(exc, SMTPException):
+                log_smtp_failure(exc)
             # Log only types and code locations, never request data or exception
             # messages (SMTP/database errors may contain personal information).
             frames = traceback.extract_tb(exc.__traceback__)
