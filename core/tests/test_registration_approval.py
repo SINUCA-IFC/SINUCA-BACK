@@ -57,7 +57,7 @@ class RegistrationApprovalTests(APITestCase):
                     reverse('user_registration'),
                     {
                         'email': f'registered-{country}@example.test', 'name': 'Aluno novo',
-                        'password': self.password, 'country': country, 'role': User.Role.ORGANIZER,
+                        'password': self.password, 'country': country, 'role': User.Role.STUDENT,
                         'is_superuser': True, 'approval_pending': False,
                     },
                     format='json',

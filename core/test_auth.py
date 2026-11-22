@@ -107,7 +107,7 @@ class LocalAuthenticationTests(TestCase):
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    def test_headless_signup_cannot_assign_delegation_or_privileges(self):
+    def test_headless_organizer_signup_cannot_assign_delegation_or_admin_privileges(self):
         country = Country.objects.create(name='Brasil', political_name='Brasil')
         response = self.post(
             '/_allauth/browser/v1/auth/signup',
@@ -121,7 +121,7 @@ class LocalAuthenticationTests(TestCase):
         user = User.objects.get(email='pending@example.com')
         assert user.country_id is None
         assert user.foto_id is None
-        assert user.role == User.Role.STUDENT
+        assert user.role == User.Role.ORGANIZER
         assert not user.is_staff
         assert not user.is_superuser
 

@@ -63,6 +63,28 @@ class JWTAuthenticationTests(TestCase):
         assert refreshed.status_code == HTTPStatus.OK
         assert 'access' in refreshed.json()
 
+    def test_organizer_registration_preserves_role_through_email_confirmation(self):
+        response = self.post('/api/registro/', {
+            **self.credentials, 'name': 'Organizador', 'role': 'organizer',
+            'matriculation': '1234567890', 'is_staff': True, 'is_superuser': True,
+        })
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        user = User.objects.get(email=self.credentials['email'])
+        assert user.role == User.Role.ORGANIZER
+        assert user.gang_id is None and not user.matriculation
+        assert not user.is_staff and not user.is_superuser
+        assert not response.json()['approval_pending']
+        code = re.search(r'(?<!\d)\d{6}(?!\d)', mail.outbox[-1].body).group()
+        confirmed = self.post('/api/registro/confirmar-email/', {'key': code}, response.json()['session_token'])
+        assert confirmed.status_code == HTTPStatus.OK, confirmed.content
+        profile = self.client.get('/api/usuarios/me/', HTTP_AUTHORIZATION=f'Bearer {confirmed.json()["access"]}')
+        assert profile.json()['role'] == 'organizer'
+
+    def test_registration_rejects_unknown_role(self):
+        response = self.post('/api/registro/', {**self.credentials, 'role': 'admin'})
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert not User.objects.filter(email=self.credentials['email']).exists()
+
     def test_unverified_login_sends_code_and_does_not_issue_jwt(self):
         User.objects.create_user(**self.credentials)
         response = self.post('/api/token/', self.credentials)

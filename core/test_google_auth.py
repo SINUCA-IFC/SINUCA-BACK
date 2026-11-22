@@ -20,10 +20,10 @@ class GoogleFrontendTests(TestCase):
     def _csrf(self):
         return self.client.get('/api/auth/csrf/', HTTP_ORIGIN='http://localhost:5173').json()['csrfToken']
 
-    def _start_google(self):
+    def _start_google(self, role="student"):
         response = self.client.post(
             '/api/auth/google/',
-            {'csrfmiddlewaretoken': self._csrf()},
+            {'csrfmiddlewaretoken': self._csrf(), 'role': role},
             HTTP_ORIGIN='http://localhost:5173',
         )
         assert response.status_code == HTTPStatus.FOUND
@@ -59,6 +59,18 @@ class GoogleFrontendTests(TestCase):
             ),
         ):
             return self.client.get('/accounts/google/login/callback/', {'code': 'external-test-code', 'state': state})
+
+    def test_google_organizer_signup_and_existing_role_preserved(self):
+        response = self._complete_google(self._start_google('organizer'))
+        assert response.status_code == HTTPStatus.FOUND
+        user = User.objects.get(email='google@example.com')
+        assert user.role == User.Role.ORGANIZER
+        assert not user.is_staff and not user.is_superuser
+        assert user.gang_id is None
+        self.client.post('/api/auth/logout/', HTTP_X_CSRFTOKEN=self._csrf())
+        self._complete_google(self._start_google('student'))
+        user.refresh_from_db()
+        assert user.role == User.Role.ORGANIZER
 
     def test_google_signup_callback_jwt_logout_and_repeat_login(self):
         response = self._complete_google(self._start_google())

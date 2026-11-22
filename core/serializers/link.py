@@ -22,12 +22,13 @@ class LinkSerializer(ModelSerializer):
             'name',
             'url',
             'categories',
+            'category',
             'country',
         ]
 
     def get_categories(self, obj):
-        return list(
+        return sorted(set(([obj.category] if obj.category else []) + list(
             obj.schedules
                 .values_list('category', flat=True)
                 .distinct()
-        )
+        )))

@@ -7,6 +7,8 @@ class Link(models.Model):
     name = models.CharField(max_length=100, blank=True)
     url = models.URLField(max_length=200)
 
+    category = models.IntegerField(choices=[(2, 'Debate'), (3, 'Mesa de cooperação')], null=True, blank=True)
+
     country = models.ManyToManyField(
         Country,
         related_name='link_country',

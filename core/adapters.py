@@ -36,6 +36,20 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
                     HttpResponseRedirect(f'{next_url}?error=google_account_confirmation_required')
                 )
 
+    def save_user(self, request, sociallogin, form=None):
+        # Only new Google accounts use the selected role; existing accounts keep theirs.
+        role = (sociallogin.state.get('data') or {}).get('registration_role', User.Role.STUDENT)
+        if role not in (User.Role.STUDENT, User.Role.ORGANIZER):
+            role = User.Role.STUDENT
+        sociallogin.user.role = role
+        user = super().save_user(request, sociallogin, form)
+        user.role = role
+        if role == User.Role.ORGANIZER:
+            user.gang = None
+            user.matriculation = ''
+        user.save(update_fields=['role', 'gang', 'matriculation'])
+        return user
+
     def populate_user(self, request, sociallogin, data):
         user = super().populate_user(request, sociallogin, data)
         user.name = data.get('name') or ' '.join(

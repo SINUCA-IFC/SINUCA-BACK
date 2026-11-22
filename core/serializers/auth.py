@@ -7,14 +7,21 @@ from uploader.fields import LimitedImageField
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     foto = LimitedImageField(required=False, allow_null=True, write_only=True)
+    role = serializers.ChoiceField(choices=[User.Role.STUDENT, User.Role.ORGANIZER], default=User.Role.STUDENT)
     approval_pending = serializers.SerializerMethodField()
+
+    def validate(self, attrs):
+        if attrs['role'] == User.Role.ORGANIZER:
+            attrs['gang'] = None
+            attrs['matriculation'] = ''
+        return attrs
 
     def get_approval_pending(self, obj) -> bool:
         return obj.is_student and obj.country_id is None
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country', 'approval_pending']
+        fields = ['id', 'email', 'name', 'password', 'foto', 'gang', 'matriculation', 'country', 'role', 'approval_pending']
         read_only_fields = ['id', 'country']
 
 

@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_GET, require_POST
 
+from core.models import User
 from core.google_link import PENDING_KEY, READY_KEY, RESULT_KEY, connection_user, create_proof, verified_user
 
 
@@ -27,6 +28,9 @@ def csrf_token(request):
 @never_cache
 @csrf_protect
 def google_login(request):
+    role = request.POST.get('role') or User.Role.STUDENT
+    if role not in (User.Role.STUDENT, User.Role.ORGANIZER):
+        return JsonResponse({'detail': 'Perfil de cadastro invalido.'}, status=400)
     provider = get_adapter().get_provider(request, 'google')
     origin = request.headers.get('Origin', '')
     next_url = (
@@ -34,7 +38,9 @@ def google_login(request):
         if origin in settings.FRONTEND_ALLOWED_ORIGINS
         else settings.LOGIN_REDIRECT_URL
     )
-    return provider.redirect(request, AuthProcess.LOGIN, next_url=next_url, headless=True)
+    return provider.redirect(
+        request, AuthProcess.LOGIN, next_url=next_url, headless=True, data={'registration_role': role},
+    )
 
 
 @require_POST
