@@ -28,7 +28,13 @@ def csrf_token(request):
 @csrf_protect
 def google_login(request):
     provider = get_adapter().get_provider(request, 'google')
-    return provider.redirect(request, AuthProcess.LOGIN, next_url=settings.LOGIN_REDIRECT_URL, headless=True)
+    origin = request.headers.get('Origin', '')
+    next_url = (
+        f'{origin}/auth/callback'
+        if origin in settings.FRONTEND_ALLOWED_ORIGINS
+        else settings.LOGIN_REDIRECT_URL
+    )
+    return provider.redirect(request, AuthProcess.LOGIN, next_url=next_url, headless=True)
 
 
 @require_POST

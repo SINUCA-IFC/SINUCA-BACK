@@ -1,31 +1,52 @@
-﻿# Contrato de autenticação para o frontend
+# Contrato de autenticação para o frontend
 
-Backend: `http://localhost:8000`. Frontend: `http://localhost:5173`.
+Backend: `https://sinuca-backend.class.fabricadesoftware.ifc.edu.br`. Frontend: `https://sinuca-ifc-mocha.vercel.app`.
 O fluxo da API continua com JWT/Bearer, access válido por 3 horas e refresh por
 1 dia. O allauth gerencia cadastro, confirmação e Google.
 
-## Configuração
+## Configuração do deploy
 
-```powershell
-pdm sync
-pdm run python manage.py migrate
-pdm run python manage.py runserver localhost:8000
+Use as variáveis de `.env.example` no painel do backend, preservando os valores
+reais de SECRET_KEY, DATABASE_URL, Google e VAPID já configurados. O arquivo de
+exemplo não é carregado automaticamente pelo deploy.
+
+```dotenv
+MODE=PRODUCTION
+DEBUG=False
+FRONTEND_URL=https://sinuca-ifc-mocha.vercel.app
+FRONTEND_ALLOWED_ORIGINS=
+AUTH_COOKIE_SECURE=True
+AUTH_CROSS_SITE_COOKIES=True
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=sinuca.ifc.no.reply@gmail.com
+DEFAULT_FROM_EMAIL="SINUCA <sinuca.ifc.no.reply@gmail.com>"
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
 ```
 
-O `.env` local contém `FRONTEND_URL=http://localhost:5173`. Esse valor configura
-CORS, CSRF e os retornos ao frontend. As credenciais Google continuam privadas
-em `.secrets/google.env` ou nas variáveis do ambiente. O callback autorizado no
-Google Cloud continua `http://localhost:8000/accounts/google/login/callback/`.
-Use localhost tanto no front quanto no back, sem alternar com 127.0.0.1.
+Defina EMAIL_HOST_PASSWORD somente no painel com uma senha de aplicativo da
+conta Gmail. Não use a senha comum nem publique a credencial no repositório.
+Veja [senhas de aplicativo do Google](https://support.google.com/accounts/answer/185833).
 
-A página demonstrativa da raiz e as páginas de conta do Django foram removidas
-com `HEADLESS_ONLY=True`. As URLs dos provedores OAuth continuam disponíveis.
-A raiz `/` agora retorna 404; o aplicativo deve ser aberto no frontend.
-As notificações Web Push e seus logs da dev permanecem disponíveis.
-Em DEVELOPMENT, o backend padrão do Django exibe códigos apenas no terminal.
-Para deploy em dev, configure SMTP e as demais variáveis de ambiente no painel do provedor de hospedagem.
-Substitua as URLs locais deste contrato pelos endereços do ambiente publicado.
-O frontend não recebe nem gera o código, apenas recebe o que o usuário digitar.
+FRONTEND_URL é a origem, sem `/mural`. Ela define CORS, CSRF e os retornos de
+conta. Não adicione localhost às origens de produção. Os cookies entre Vercel
+e IFC usam `SameSite=None; Secure`. Se o proxy sobrescreve X-Forwarded-Proto,
+configure também TRUST_PROXY_HTTPS=True para gerar o callback HTTPS corretamente.
+
+No Google Cloud, autorize este callback:
+`https://sinuca-backend.class.fabricadesoftware.ifc.edu.br/accounts/google/login/callback/`.
+No frontend, configure VITE_API_BASE_URL com a origem HTTPS do backend.
+
+Republique/reinicie o backend após atualizar as variáveis. O 404 na raiz `/`
+é esperado; a aplicação é acessada no frontend.
+
+Um GET 200 em `/api/auth/csrf/` não comprova que o navegador aceitou o cookie.
+Confirme `credentials: 'include'` no GET, o cookie csrftoken no POST e o campo
+csrfmiddlewaretoken no formulário. Bloqueio de cookies de terceiros ainda
+pode impedir o fluxo; hospedar frontend e API no mesmo site evita essa dependência.
+As rejeições aparecem em django.security.csrf com o motivo, mesmo com DEBUG=False.
 
 ## Cadastro e confirmação
 
@@ -92,14 +113,14 @@ Uma conta com mesmo e-mail já existente deve fazer login; não recriar a conta.
 
 1. Buscar `GET /api/auth/csrf/` com credentials=include. Retorna csrfToken e
    configura o cookie no navegador.
-2. Criar formulário HTML POST para `http://localhost:8000/api/auth/google/`.
+2. Criar formulário HTML POST para `https://sinuca-backend.class.fabricadesoftware.ifc.edu.br/api/auth/google/`.
    Incluir um campo oculto `csrfmiddlewaretoken` com csrfToken. Submeter o
    formulário como navegação completa. Não fazer fetch ao endpoint de início
    OAuth: ele redireciona o navegador para o Google.
 3. O backend define o provedor e o retorno fixo. Não enviar client_secret,
    callback_url ou tokens Google pelo frontend.
 4. Google volta para `/accounts/google/login/callback/` no backend, que valida
-   state e a identidade e redireciona para `http://localhost:5173/auth/callback`.
+   state e a identidade e redireciona para `https://sinuca-ifc-mocha.vercel.app/auth/callback`.
 5. Se houver `error` na query do retorno, mostrar mensagem compreensível e ação
    para voltar ao login. Não imprimir a mensagem bruta como HTML.
 6. Sem erro, obter NOVO csrfToken (o login rotaciona CSRF), com credentials=include.
