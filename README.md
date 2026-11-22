@@ -347,8 +347,17 @@ O `pyproject.toml` declara licença MIT.
 Set these environment variables in the backend deployment panel, then restart:
 
 ```dotenv
-FRONTEND_URL=https://sinuca-front-pedro-gabriel-goncalves-projects.vercel.app
+FRONTEND_URL=https://sinuca-ifc-mocha.vercel.app
 AUTH_CROSS_SITE_COOKIES=True
+AUTH_COOKIE_SECURE=True
+FRONTEND_ALLOWED_ORIGINS=
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=sinuca.ifc.no.reply@gmail.com
+DEFAULT_FROM_EMAIL="SINUCA <sinuca.ifc.no.reply@gmail.com>"
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
 ```
 
 FRONTEND_URL is the exact allowed CORS/CSRF origin and Google return destination.
@@ -357,3 +366,6 @@ cross-site deployment. It requires HTTPS and does not bypass CSRF or authorize
 other origins. Browser third-party cookie blocking can still prevent OAuth;
 a frontend hosted on the same site as the API avoids that restriction.
 When moving the frontend, update FRONTEND_URL and review this cookie setting.
+
+Configure EMAIL_HOST_PASSWORD only in the deployment panel using a Gmail app password.
+Full deployment instructions: [authentication](docs/django-allauth.md#configuração-do-deploy).

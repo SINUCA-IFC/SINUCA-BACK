@@ -7,6 +7,8 @@ os.environ['PYTHON_DOTENV_DISABLED'] = '1'
 os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 os.environ['MODE'] = 'DEVELOPMENT'
 os.environ['FRONTEND_URL'] = 'http://localhost:5173'
+os.environ['AUTH_CROSS_SITE_COOKIES'] = 'False'
+os.environ['AUTH_COOKIE_SECURE'] = 'False'
 os.environ['GOOGLE_CLIENT_ID'] = 'test-google-client'
 os.environ['GOOGLE_CLIENT_SECRET'] = 'test-google-secret'
 

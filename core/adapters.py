@@ -28,8 +28,12 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             if any(
                 User.objects.filter(email__iexact=address.email).exists() for address in sociallogin.email_addresses
             ):
+                next_url = sociallogin.state.get('next')
+                allowed_callbacks = {f'{origin}/auth/callback' for origin in settings.FRONTEND_ALLOWED_ORIGINS}
+                if next_url not in allowed_callbacks:
+                    next_url = settings.LOGIN_REDIRECT_URL
                 raise ImmediateHttpResponse(
-                    HttpResponseRedirect(f'{settings.LOGIN_REDIRECT_URL}?error=google_account_confirmation_required')
+                    HttpResponseRedirect(f'{next_url}?error=google_account_confirmation_required')
                 )
 
     def populate_user(self, request, sociallogin, data):

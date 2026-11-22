@@ -22,22 +22,33 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
 DEBUG = os.getenv('DEBUG', 'False').strip().lower() in {'true', '1', 'yes', 'on'}
 DEFAULT_EXCEPTION_REPORTER_FILTER = 'app.debug.SensitiveSettingsFilter'
 ALLOWED_HOSTS = ['*']
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').strip().rstrip('/')
-SESSION_COOKIE_SECURE = FRONTEND_URL.startswith('https://')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://sinuca-ifc-mocha.vercel.app').strip().rstrip('/')
+# Cookies belong to the HTTPS API.
+SESSION_COOKIE_SECURE = os.getenv(
+    'AUTH_COOKIE_SECURE', str(FRONTEND_URL.startswith('https://'))
+).strip().lower() in {'true', '1', 'yes', 'on'}
 CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
 # Enable only when the frontend and API are on different sites (e.g. Vercel/IFC).
 # Exact-origin CORS and CSRF validation remain required.
-AUTH_CROSS_SITE_COOKIES = os.getenv('AUTH_CROSS_SITE_COOKIES', 'False').strip().lower() in {'true', '1', 'yes', 'on'}
+AUTH_CROSS_SITE_COOKIES = os.getenv('AUTH_CROSS_SITE_COOKIES', 'True').strip().lower() in {'true', '1', 'yes', 'on'}
 if AUTH_CROSS_SITE_COOKIES and not SESSION_COOKIE_SECURE:
-    raise ImproperlyConfigured('AUTH_CROSS_SITE_COOKIES requires an HTTPS FRONTEND_URL.')
+    raise ImproperlyConfigured('AUTH_CROSS_SITE_COOKIES requires AUTH_COOKIE_SECURE=True and an HTTPS backend.')
 SESSION_COOKIE_SAMESITE = 'None' if AUTH_CROSS_SITE_COOKIES else 'Lax'
 CSRF_COOKIE_SAMESITE = SESSION_COOKIE_SAMESITE
 # Enable only behind a proxy that overwrites this header.
 if os.getenv('TRUST_PROXY_HTTPS', 'False').lower() == 'true':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
+# Explicit browser origins supported by the frontend; no wildcard credentials.
+FRONTEND_ALLOWED_ORIGINS = list(dict.fromkeys([
+    FRONTEND_URL,
+    *[origin.strip().rstrip('/') for origin in os.getenv(
+        'FRONTEND_ALLOWED_ORIGINS',
+        '',
+    ).split(',') if origin.strip()],
+]))
+CSRF_TRUSTED_ORIGINS = FRONTEND_ALLOWED_ORIGINS
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+CORS_ALLOWED_ORIGINS = FRONTEND_ALLOWED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = (*default_headers, 'x-session-token', 'x-push-endpoint')
 
@@ -175,18 +186,16 @@ HEADLESS_FRONTEND_URLS = {
 
 EMAIL_BACKEND = os.getenv(
     'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
-    if MODE == 'DEVELOPMENT'
-    else 'django.core.mail.backends.smtp.EmailBackend',
+    'django.core.mail.backends.smtp.EmailBackend',
 )
-EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'sinuca.ifc.no.reply@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
 EMAIL_TIMEOUT = 15
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'SINUCA <no-reply@localhost>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'SINUCA <sinuca.ifc.no.reply@gmail.com>')
 
 # Configurações de internacionalização
 LANGUAGE_CODE = 'pt-br'
@@ -267,6 +276,11 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {'push_console': {'class': 'logging.StreamHandler'}},
     'loggers': {
+        'django.security.csrf': {
+            'handlers': ['push_console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
         'core.services.push': {
             'handlers': ['push_console'],
             'level': 'INFO',
