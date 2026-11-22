@@ -276,6 +276,12 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {'push_console': {'class': 'logging.StreamHandler'}},
     'loggers': {
+        # Show request exception tracebacks in deployment logs with DEBUG=False.
+        'django.request': {
+            'handlers': ['push_console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'django.security.csrf': {
             'handlers': ['push_console'],
             'level': 'WARNING',
