@@ -11,7 +11,14 @@ from .gang import GangSerializer
 
 
 class UserSerializer(ModelSerializer):
+    name = serializers.CharField(required=False, allow_blank=False, allow_null=False, max_length=255)
     approval_pending = serializers.SerializerMethodField()
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if self.instance is not None:
+            fields['email'].read_only = True
+        return fields
 
     def get_approval_pending(self, obj) -> bool:
         return obj.is_student and not obj.is_superuser and obj.country_id is None

@@ -38,4 +38,4 @@ class PaginationTests(APITestCase):
                 ids = [item['id'] for item in first.data['results'] + second.data['results']]
                 self.assertEqual(len(ids), count)
                 self.assertEqual(len(set(ids)), count)
-                self.assertEqual(ids, sorted(ids))
+                self.assertEqual(ids, sorted(ids, reverse=endpoint == 'postagens'))

@@ -1,6 +1,7 @@
 # ruff: noqa: PLR2004 -- Os números são resultados esperados dos testes.
 from unittest.mock import patch
 
+from django.conf import settings
 from rest_framework.test import APITestCase
 
 from core.models import Country, Message, User
@@ -53,8 +54,19 @@ class ChatPushTests(APITestCase):
     def test_cross_origin_requests_allow_push_endpoint_header(self):
         response = self.client.options(
             '/api/mensagens/',
-            HTTP_ORIGIN='https://sinuca.test',
+            HTTP_ORIGIN=settings.FRONTEND_URL,
             HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
-            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization,x-push-endpoint',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='authorization,x-push-endpoint,x-session-token',
         )
         assert 'x-push-endpoint' in response.headers['Access-Control-Allow-Headers']
+        assert 'x-session-token' in response.headers['Access-Control-Allow-Headers']
+        assert response.headers['Access-Control-Allow-Origin'] == settings.FRONTEND_URL
+
+    def test_cross_origin_requests_reject_unknown_origin(self):
+        response = self.client.options(
+            '/api/mensagens/',
+            HTTP_ORIGIN='https://untrusted.example',
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='x-push-endpoint,x-session-token',
+        )
+        assert 'Access-Control-Allow-Origin' not in response.headers

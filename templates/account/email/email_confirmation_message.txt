@@ -1,0 +1,13 @@
+Confirme seu e-mail no SINUCA
+
+{% if code %}Seu código de confirmação é:
+
+{{ code }}
+
+Digite os seis dígitos na tela de cadastro. O código expira em 10 minutos.
+{% else %}Para confirmar seu endereço, abra este link:
+{{ activate_url }}
+{% endif %}
+Se você não solicitou esta confirmação, pode ignorar esta mensagem.
+
+Equipe SINUCA

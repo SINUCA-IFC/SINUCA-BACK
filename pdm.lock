@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
-lock_version = "4.5.1"
-content_hash = "sha256:a9c83370f879445f4504f9be859d08aef07403d5a55d8a882c5005f70868171e"
+lock_version = "4.5.0"
+content_hash = "sha256:bc43b22d334e57f85cd898fa5bac85daabd6eb67bc24db1a66b84186a1ab9c66"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -740,6 +740,40 @@ files = [
 ]
 
 [[package]]
+name = "django-allauth"
+version = "65.19.7"
+requires_python = ">=3.10"
+summary = "Integrated set of Django applications addressing authentication, registration, account management as well as 3rd party (social) account authentication."
+groups = ["default"]
+dependencies = [
+    "Django>=4.2.16",
+    "asgiref>=3.8.1",
+]
+files = [
+    {file = "django_allauth-65.19.7-py3-none-any.whl", hash = "sha256:8899377f38afabf10445c9ee2f808a730304ca8aecc540657d51a8b3928283d6"},
+    {file = "django_allauth-65.19.7.tar.gz", hash = "sha256:c7749551b659ca954e483f6f634cd0c262d65dd8144f5219b3a31cba0426e981"},
+]
+
+[[package]]
+name = "django-allauth"
+version = "65.19.7"
+extras = ["headless", "socialaccount"]
+requires_python = ">=3.10"
+summary = "Integrated set of Django applications addressing authentication, registration, account management as well as 3rd party (social) account authentication."
+groups = ["default"]
+dependencies = [
+    "django-allauth==65.19.7",
+    "oauthlib<5,>=4.0.0",
+    "pyjwt[crypto]<3,>=2.0",
+    "pyjwt[crypto]<3,>=2.0",
+    "requests<3,>=2.0.0",
+]
+files = [
+    {file = "django_allauth-65.19.7-py3-none-any.whl", hash = "sha256:8899377f38afabf10445c9ee2f808a730304ca8aecc540657d51a8b3928283d6"},
+    {file = "django_allauth-65.19.7.tar.gz", hash = "sha256:c7749551b659ca954e483f6f634cd0c262d65dd8144f5219b3a31cba0426e981"},
+]
+
+[[package]]
 name = "django-cloudinary-storage"
 version = "0.3.0"
 summary = "Django package that provides Cloudinary storages for both media and static files as well as management commands for removing unnecessary files."
@@ -1376,6 +1410,17 @@ files = [
 ]
 
 [[package]]
+name = "oauthlib"
+version = "4.0.1"
+requires_python = ">=3.9"
+summary = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
+groups = ["default"]
+files = [
+    {file = "oauthlib-4.0.1-py3-none-any.whl", hash = "sha256:498a298876e996301950a5b053d12c31628bb7b895db03666430c69ce182eb61"},
+    {file = "oauthlib-4.0.1.tar.gz", hash = "sha256:3d73febdb6faa00f277c81fb04be7b7586fb96fc3b7f0b9c772dada69a25ede7"},
+]
+
+[[package]]
 name = "packaging"
 version = "26.0"
 requires_python = ">=3.8"
@@ -1836,13 +1881,32 @@ files = [
 
 [[package]]
 name = "pyjwt"
-version = "2.11.0"
+version = "2.15.1"
 requires_python = ">=3.9"
 summary = "JSON Web Token implementation in Python"
 groups = ["default"]
+dependencies = [
+    "typing-extensions>=4.0; python_version < \"3.11\"",
+]
 files = [
-    {file = "pyjwt-2.11.0-py3-none-any.whl", hash = "sha256:94a6bde30eb5c8e04fee991062b534071fd1439ef58d2adc9ccb823e7bcd0469"},
-    {file = "pyjwt-2.11.0.tar.gz", hash = "sha256:35f95c1f0fbe5d5ba6e43f00271c275f7a1a4db1dab27bf708073b75318ea623"},
+    {file = "pyjwt-2.15.1-py3-none-any.whl", hash = "sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193"},
+    {file = "pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8"},
+]
+
+[[package]]
+name = "pyjwt"
+version = "2.15.1"
+extras = ["crypto"]
+requires_python = ">=3.9"
+summary = "JSON Web Token implementation in Python"
+groups = ["default"]
+dependencies = [
+    "cryptography>=3.4.0",
+    "pyjwt==2.15.1",
+]
+files = [
+    {file = "pyjwt-2.15.1-py3-none-any.whl", hash = "sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193"},
+    {file = "pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8"},
 ]
 
 [[package]]

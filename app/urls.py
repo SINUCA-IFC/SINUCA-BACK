@@ -9,7 +9,6 @@ from drf_spectacular.views import (
 )
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
@@ -24,10 +23,11 @@ from core.views import (
     PushSubscriptionView,
     ScheduleViewSet,
     TaskViewSet,
-    UserRegistrationView,
     UserViewSet,
     VapidPublicKeyView,
 )
+from core.views.auth import connect_google, csrf_token, google_login, logout_session, prepare_google_connection
+from core.views.auth_api import RegistrationView, ResendEmailView, SessionTokenView, TokenLoginView, VerifyEmailView
 from uploader.router import router as uploader_router
 
 router = DefaultRouter()
@@ -43,6 +43,16 @@ router.register(r'docs', LinkViewSet, basename='docs')
 router.register(r'mensagens', MessageViewSet, basename='mensagens')
 
 urlpatterns = [
+    path('api/token/session/', SessionTokenView.as_view(), name='session_token'),
+    path('api/registro/confirmar-email/', VerifyEmailView.as_view(), name='verify_registration_email'),
+    path('api/registro/reenviar-codigo/', ResendEmailView.as_view(), name='resend_registration_code'),
+    path('api/auth/csrf/', csrf_token, name='csrf_token'),
+    path('api/auth/google/', google_login, name='google_start'),
+    path('api/auth/google/vincular/', prepare_google_connection, name='google_link_prepare'),
+    path('api/auth/google/conectar/', connect_google, name='google_connect'),
+    path('api/auth/logout/', logout_session, name='logout_session'),
+    path('accounts/', include('allauth.urls')),
+    path('_allauth/', include('allauth.headless.urls')),
     path('admin/', admin.site.urls),
     # OpenAPI 3
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -58,11 +68,11 @@ urlpatterns = [
     ),
     path('api/media/', include(uploader_router.urls)),  # nova linha
     # Autenticação JWT
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', TokenLoginView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     # Registro de usuários
-    path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
+    path('api/registro/', RegistrationView.as_view(), name='user_registration'),
     path('api/vapid-public-key/', VapidPublicKeyView.as_view(), name='vapid-public-key'),
     path('api/push-subscriptions/', PushSubscriptionView.as_view(), name='push-subscriptions'),
     # API

@@ -1,3 +1,5 @@
+from allauth.account.models import EmailAddress
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,6 +10,9 @@ from core.models import Category, Country, Gang, Link, Message, Schedule, Task, 
 
 class RegistrationApprovalTests(APITestCase):
     password = 'Synthetic-registration-password-2026!'
+
+    def setUp(self):
+        cache.clear()
 
     @classmethod
     def setUpTestData(cls):
@@ -66,6 +71,7 @@ class RegistrationApprovalTests(APITestCase):
                 self.assertIs(response.data.get('approval_pending'), True)
 
     def test_pending_student_can_log_in_and_read_own_status(self):
+        EmailAddress.objects.create(user=self.pending, email=self.pending.email, verified=True, primary=True)
         response = self.client.post(
             reverse('token_obtain_pair'),
             {'email': self.pending.email, 'password': self.password}, format='json',
