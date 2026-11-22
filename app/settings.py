@@ -168,8 +168,8 @@ ACCOUNT_LOGOUT_REDIRECT_URL = f'{FRONTEND_URL}/login'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', '').strip(),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', '').strip(),
             'key': '',
         },
         'SCOPE': ['profile', 'email'],
