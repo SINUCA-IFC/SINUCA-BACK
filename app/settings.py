@@ -274,8 +274,16 @@ VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', 'mailto:admin@example.com')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {'push_console': {'class': 'logging.StreamHandler'}},
+    'handlers': {
+        'push_console': {'class': 'logging.StreamHandler'},
+        'auth_console': {'class': 'logging.StreamHandler', 'stream': 'ext://sys.stdout'},
+    },
     'loggers': {
+        'core.auth.password': {
+            'handlers': ['auth_console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         # Show request exception tracebacks in deployment logs with DEBUG=False.
         'django.request': {
             'handlers': ['push_console'],

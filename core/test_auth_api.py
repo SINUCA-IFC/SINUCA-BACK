@@ -3,6 +3,7 @@ import re
 import time
 from contextlib import redirect_stdout
 from http import HTTPStatus
+from smtplib import SMTPAuthenticationError
 from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
@@ -78,6 +79,24 @@ class JWTAuthenticationTests(TestCase):
         assert response.status_code != HTTPStatus.OK
         assert len(mail.outbox) == 0
         assert 'access' not in response.json()
+
+    def test_password_login_failure_logs_diagnostic_without_credentials(self):
+        User.objects.create_user(**self.credentials)
+        with (
+            patch(
+                'django.core.mail.message.EmailMultiAlternatives.send',
+                side_effect=SMTPAuthenticationError(535, b'sensitive-provider-message'),
+            ),
+            self.assertLogs('core.auth.password', level='ERROR') as captured,
+            self.assertRaises(SMTPAuthenticationError),
+        ):
+            self.post('/api/token/', self.credentials)
+        diagnostic = '\n'.join(captured.output)
+        assert 'PASSWORD_LOGIN_FAILED stage=allauth_login' in diagnostic
+        assert 'SMTPAuthenticationError' in diagnostic
+        assert self.credentials['email'] not in diagnostic
+        assert self.credentials['password'] not in diagnostic
+        assert 'sensitive-provider-message' not in diagnostic
 
     def test_pending_session_and_correct_code_are_both_required(self):
         session_token, code = self.signup()

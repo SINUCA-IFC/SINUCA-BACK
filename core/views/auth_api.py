@@ -1,4 +1,6 @@
 import json
+import logging
+import traceback
 from copy import copy
 from io import BytesIO
 
@@ -118,7 +120,21 @@ class TokenLoginView(AllauthAPIView):
         tags=['Autenticação'],
     )
     def post(self, request):
-        return self.authentication_response(*self.invoke(request, account_views.LoginView))
+        stage = 'allauth_login'
+        try:
+            payload, response = self.invoke(request, account_views.LoginView)
+            stage = 'jwt_response'
+            return self.authentication_response(payload, response)
+        except Exception as exc:
+            # Log only types and code locations, never request data or exception
+            # messages (SMTP/database errors may contain personal information).
+            frames = traceback.extract_tb(exc.__traceback__)
+            locations = ' -> '.join(f'{frame.filename}:{frame.lineno}:{frame.name}' for frame in frames)
+            logging.getLogger('core.auth.password').error(
+                'PASSWORD_LOGIN_FAILED stage=%s exception=%s.%s locations=%s',
+                stage, type(exc).__module__, type(exc).__name__, locations,
+            )
+            raise
 
 
 class VerifyEmailView(AllauthAPIView):
