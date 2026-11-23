@@ -62,6 +62,20 @@ class UserViewSet(ModelViewSet):
         student.refresh_from_db()
         return Response(UserSerializer(student).data)
 
+    @action(detail=True, methods=['post'], url_path='remover-delegacao', permission_classes=[IsOrganizer])
+    def remover_delegacao(self, request, pk=None):
+        student = self.get_object()
+        serializer = UserApprovalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        updated = User.objects.filter(
+            pk=student.pk, role=User.Role.STUDENT, is_superuser=False,
+            country=serializer.validated_data['country'],
+        ).update(country=None)
+        if not updated:
+            raise ValidationError({'country': 'O participante nao pertence a esta delegacao.'})
+        student.refresh_from_db()
+        return Response(UserSerializer(student).data)
+
     @extend_schema(
         summary="Dados do usuário autenticado",
         description="Retorna os dados do usuário autenticado.",
