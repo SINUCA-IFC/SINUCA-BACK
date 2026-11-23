@@ -20,7 +20,7 @@ def validate_upload_quota(owner, size):
 
 class UploadRateThrottle(UserRateThrottle):
     scope = 'uploads'
-    rate = '10/hour'
+    rate = '50/hour'
 
 
 class RegistrationRateThrottle(SimpleRateThrottle):
