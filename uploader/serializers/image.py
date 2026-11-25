@@ -11,7 +11,6 @@ class ImageUploadSerializer(serializers.ModelSerializer):
         model = Image
         fields = ["id", "attachment_key", "file", "description", "uploaded_on", "url"]
         read_only_fields = ["attachment_key", "uploaded_on", "url"]
-        extra_kwargs = {"file": {"write_only": True}}
 
 
 class ImageSerializer(serializers.ModelSerializer):

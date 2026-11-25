@@ -1,4 +1,4 @@
-from .user import UserRegistrationView, UserViewSet
+from .user import UserViewSet
 from .task import TaskViewSet
 from .post import PostViewSet
 from .category import CategoryViewSet
