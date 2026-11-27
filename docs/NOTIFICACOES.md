@@ -28,25 +28,25 @@ VAPID_SUBJECT=mailto:contato@seu-dominio.com
 As chaves devem formar o mesmo par. Somente a chave pública é retornada por `/api/vapid-public-key/`; nunca configure a chave privada no front. Para gerar um par usando a biblioteca já instalada:
 
 ```bash
-vapid --gen
-vapid --applicationServerKey
+pdm run vapid --gen
+pdm run vapid --applicationServerKey
 ```
 
 O primeiro comando gera `private_key.pem` e `public_key.pem` no diretório atual; o segundo mostra a chave pública para o navegador. `VAPID_PRIVATE_KEY` pode apontar para o caminho absoluto do PEM privado. Guarde esses arquivos fora do repositório, com acesso restrito ao servidor. A rotação de chaves exige remover e recriar as inscrições dos navegadores.
 
 ```bash
-python manage.py migrate
-python manage.py notify_overdue_tasks
+pdm run migrate
+pdm run python manage.py notify_overdue_tasks
 ```
 
-As migrações `0029` (inscrições, introduzida pelo CHORE) e `0030` (avisos de atraso) precisam estar aplicadas. O aplicativo publicado deve usar HTTPS. O CORS permite o header `X-Push-Endpoint`.
+As migrações `0029` (inscrições) e `0030` (avisos de atraso) precisam estar aplicadas. O aplicativo publicado deve usar HTTPS. O CORS permite o header `X-Push-Endpoint`.
 
 ## Agendamento de atrasos
 
 Web Push não verifica datas sozinho. Configure um agendador do ambiente publicado para executar diariamente, por exemplo às 08h no fuso America/Sao_Paulo:
 
 ```cron
-0 8 * * * cd /caminho/SINUCA-BACK && /caminho/venv/bin/python manage.py notify_overdue_tasks >> /caminho/logs/overdue.log 2>&1
+0 8 * * * cd /caminho/SINUCA-BACK && /caminho/pdm run python manage.py notify_overdue_tasks >> /caminho/logs/overdue.log 2>&1
 ```
 
 O exemplo pressupõe que o fuso do agendador seja America/Sao_Paulo e que o processo carregue as mesmas variáveis/banco do aplicativo. Adapte caminhos e ambiente. Este repositório entrega o comando; não configura um agendador externo automaticamente.
@@ -60,8 +60,8 @@ O comando revalida status/prazo sob bloqueio da tarefa e serializa execuções c
 ## Verificação
 
 ```bash
-python manage.py test
-python manage.py makemigrations --check --dry-run
+pdm run python manage.py test --settings=app.settings_test --noinput
+pdm run python manage.py makemigrations --check --dry-run --settings=app.settings_test
 ```
 
 Testes automatizados simulam o Push Service e verificam destinatários, inscrições, isolamento, falhas, atribuições e atrasos. Para verificar entrega real, publique front/back com VAPID, entre em dois navegadores, autorize notificações e exercite os quatro eventos. Confirme a exclusão da origem e clique nos avisos com sessão ativa e expirada.
@@ -113,25 +113,10 @@ navigator.serviceWorker.addEventListener('message', async ({ data }) => {
 
 O listener observa apenas eventos novos e desaparece ao recarregar a página. Se houver aceitação no backend, mas nenhum evento no navegador, investigue a conexão do navegador ao serviço de push e o worker ativo. Se chegar `PUSH_RECEIVED`, verifique erros de `showNotification` no console do service worker e a exibição pelo navegador/sistema operacional. A lista de notificações pode estar vazia se o aviso já tiver sido fechado.
 
-Uma inscrição existente no navegador não prova que foi criada com a chave atual. O front agora compara `subscription.options.applicationServerKey` com a chave pública da API em cada sincronização e renova a inscrição quando forem diferentes. Após atualizar o front, sair e entrar novamente dispara essa verificação. Se o erro continuar com a configuração consistente, consulte os logs de execução do **backend**, no horário de uma mensagem nova, e confira se o destinatário é uma conta ativa inscrita da delegação correta. Logs antigos de deploy do frontend não registram esse envio.
+Uma inscrição existente no navegador não prova que foi criada com a chave atual. O front compara `subscription.options.applicationServerKey` com a chave pública da API em cada sincronização e renova a inscrição quando forem diferentes. Após atualizar o front, sair e entrar novamente dispara essa verificação. Se o erro continuar com a configuração consistente, consulte os logs de execução do **backend**, no horário de uma mensagem nova, e confira se o destinatário é uma conta ativa inscrita da delegação correta. Logs antigos de deploy do frontend não registram esse envio.
 
-### Resultado da varredura de 18/11/2026
+## Postagens pelo Admin e testes
 
-- A API publicada respondeu HTTP 200 com chave pública de 87 caracteres e ponto P-256 válido. Isso não permite conferir a chave privada da hospedagem.
-- Foram revisados cadastro/autenticação da inscrição, associação ao usuário, header de exclusão da origem, destinatários de chat e tarefas, postagens API/Admin, atrasos, payload, worker, clique, permissões, CORS e configuração de publicação.
-- Foi reproduzida e corrigida a reutilização de uma inscrição vinculada a uma chave VAPID anterior. Os testes comprovam a renovação quando a chave muda e a preservação quando continua igual.
-- O teste de chat agora executa `pywebpush` real com as versões do `requirements.txt`, valida a assinatura JWT e descriptografa o conteúdo nos dois sentidos da conversa. Somente o transporte HTTP externo é substituído; isso não representa uma entrega real pelo Fabroku.
-- O `.env` local não tem VAPID configurado. Essa observação descreve o ambiente local e não determina as variáveis publicadas. O front está apontando para a API publicada; alterações locais no backend precisam ser publicadas para afetar esse teste.
-- Os logs posteriores do backend confirmaram chave privada ausente e, após sua configuração, par inconsistente (`core.W003`). O painel passou a mostrar uma chave pública diferente da usada pelo processo; após o redeploy de 18/11 às 10:50, a API passou a publicar a mesma chave do arquivo local e o diagnóstico passou a validar o par. A inscrição antiga nº 3 ainda recebeu HTTP 401. As inscrições novas não tiveram rejeições registradas nesse log, mas ainda falta confirmar aceitação e chegada/exibição real.
+A criação pelo Django Admin usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente.
 
-A criação pelo Django Admin agora usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente. Esta correção precisa ser publicada no backend para valer no Admin do Fabroku.
-
-## Mudanças acumuladas desde os CHORE
-
-- **CHORE back `3b06c02`:** modelo/CRUD de inscrições, chave pública VAPID, envio Web Push, evento de postagem, dependência `pywebpush`, lockfile/requirements e ajustes locais PDM/VS Code.
-- **CHORE front `df274f7`:** serviço de inscrição, helpers de apresentação, header de origem, integração inicial com login/logout, testes e plano de notificações.
-- **Esta implementação — back:** eventos de atribuição e chat; verificação agendada de atraso com registro por prazo; CORS; timeout, retenção e falhas isoladas por endpoint; acesso do responsável à tarefa explicitamente atribuída mesmo quando ele ou o criador administrativo não tem país; novos testes. Alunos sem país continuam sem permissão de escrita.
-- **Esta implementação — front:** `injectManifest` e worker próprio; banner de permissão; recebimento/clique com navegação segura e retorno após login; tarefa destacada no Kanban, ou visualização somente leitura do aviso se a conta não tem delegação; limpeza de inscrição protegida contra registro em andamento; proteção contra respostas antigas também nas mutações de tarefas; estado compartilhado de conversas; indicadores no desktop/celular e reutilização do símbolo da lista de países. O toggle legado de notificação foi removido do formulário porque não controlava a entrega; o campo de API foi preservado por compatibilidade.
-- **Contadores:** delegado vê o número de mensagens não lidas na sua conversa (outros autores, conforme a API existente); organizador vê quantos países têm não lidas. A lista por país mantém a contagem individual. Funciona por consultas periódicas mesmo sem push.
-
-As alterações desta implementação ficam no workspace para revisão, sem criação automática de commits ou publicação.
+Os testes de chat também validam assinatura JWT e criptografia do payload usando pywebpush, com transporte HTTP simulado. Isso protege o contrato, mas a entrega real deve ser confirmada em navegadores inscritos na versão publicada.
