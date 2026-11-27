@@ -167,8 +167,7 @@ JWT já emitido: ele segue válido até expirar, conforme o mecanismo original.
 pdm run python manage.py test --settings=app.settings_test --noinput
 ```
 
-Os testes automatizados permanecem como proteção de regressão; não são páginas
-ou funcionalidades expostas ao usuário. O teste de Google simula apenas a
+Os testes automatizados protegem os contratos de autenticação. O teste de Google simula apenas a
 resposta externa (troca de código e identidade); valida o fluxo real de callback,
 state, cadastro, e-mail verificado, nome, vínculo, sessão, JWT, logout e segundo
 login. Também cobre cancelamento, state inválido, conflito de e-mail e CORS/CSRF.
@@ -206,10 +205,10 @@ O retorno com google_account_confirmation_required oferece /auth/vincular-google
    delegação e permissões anteriores permanecem. Próximos acessos usam o botão
    Google normal, sem repetir vinculação ou exigir senha local novamente.
 
-Não há novas migrações de core/uploader. Na instalação, execute `manage.py migrate`
+Na instalação, execute `pdm run migrate`
 para aplicar as migrações fornecidas pelo allauth. Contas existentes não são
 marcadas como verificadas automaticamente: o login por senha inicia a confirmação.
-O banco real e as credenciais de produção não são usados pelos testes.
+Usar `app.settings_test` para testes isolados, sem banco real nem credenciais de produção.
 Testes em core.test_google_auth cobrem senha, CSRF, expiração, conta incorreta,
 conflito, logout, replay, preservação de dados e futuro login Google. A resposta
 externa do Google é simulada; consentimento real precisa de uma conta no navegador.

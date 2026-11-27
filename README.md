@@ -15,7 +15,7 @@ O papel `evaluator` existe, mas **lançamento de notas, médias e painel de aval
 
 ## Preparar o ambiente local
 
-`runtime.txt` indica Python 3.13; `pyproject.toml` declara `>=3.10`. Esta revisão foi testada com Python 3.14.9. Padronizar uma versão entre a equipe e o servidor antes de mudar as dependências.
+`runtime.txt` indica Python 3.13; `pyproject.toml` declara `>=3.10`. Padronizar uma versão entre a equipe e o servidor antes de mudar as dependências.
 
 No curso, usamos somente PDM, com ambientes virtuais desativados. Com Python e PDM instalados, executar `deactivate` caso exista um ambiente virtual ativo no terminal e preparar o projeto:
 
@@ -99,7 +99,7 @@ pdm run python manage.py check --settings=app.settings_test
 pdm run python manage.py makemigrations --check --dry-run --settings=app.settings_test
 ```
 
-Essa configuração ignora `.env`, usa SQLite em memória, e-mail de teste e armazenamento temporário. A suíte atual tem 185 testes. O aviso de VAPID vazia é esperado nesse modo. Testes locais não comprovam PostgreSQL, entrega SMTP/push, Google ou configuração publicada.
+Essa configuração ignora `.env`, usa SQLite em memória, e-mail de teste e armazenamento temporário. O aviso de VAPID vazia é esperado nesse modo. Testes locais não comprovam PostgreSQL, entrega SMTP/push, Google ou configuração publicada.
 
 OpenAPI ainda tem pendências de introspecção, especialmente endpoints push e serializers com relações. Conferir as mensagens de `spectacular --validate`; exit code 0 sozinho não significa schema sem problemas.
 
@@ -135,6 +135,6 @@ A configuração ainda possui fallback de chave e hosts amplos: revisar antes de
 
 O processo web é `gunicorn app.wsgi --log-file -`. `build.sh` instala dependências, coleta estáticos e aplica migrações; o `Procfile` também prevê migrações na fase release. Confirmar qual fase o provedor usa, fazer backup e testar restauração antes de mudanças em produção.
 
-Agendar externamente `python manage.py notify_overdue_tasks`. O comando não instala cron automaticamente. Conferir entrega em navegadores/aparelhos inscritos, sem confundir resposta do provedor com exibição da notificação.
+Agendar externamente `pdm run python manage.py notify_overdue_tasks`. O comando não instala cron automaticamente. Conferir entrega em navegadores/aparelhos inscritos, sem confundir resposta do provedor com exibição da notificação.
 
-Após publicar, validar com contas de teste e API real: cadastro, código/reenvio, login/Google, aprovação, tarefas, recursos, chat e push. Registrar commits, migrações e resultados. Nenhum deploy foi realizado pela simplificação descrita na passagem de bastão.
+Após publicar, validar com contas de teste e API real: cadastro, código/reenvio, login/Google, aprovação, tarefas, recursos, chat e push. Registrar commits, migrações e resultados. Registrar os resultados de homologação por versão na documentação central.
