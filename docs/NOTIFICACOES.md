@@ -120,3 +120,7 @@ Uma inscrição existente no navegador não prova que foi criada com a chave atu
 A criação pelo Django Admin usa o mesmo serviço e payload da API, após a confirmação da transação. Edições não repetem a notificação. Criações diretas no banco ou pelo ORM fora desses fluxos não disparam o evento automaticamente.
 
 Os testes de chat também validam assinatura JWT e criptografia do payload usando pywebpush, com transporte HTTP simulado. Isso protege o contrato, mas a entrega real deve ser confirmada em navegadores inscritos na versão publicada.
+
+## Ajuda ao usuário — tarefa pendente
+
+A futura tela “Como utilizar” deve explicar a instalação do app no celular conforme sistema/navegador e, separadamente, a autorização de notificações e como lidar com permissão negada ou recurso indisponível. Validar os passos nos dispositivos suportados e manter o conteúdo alinhado às telas reais. O escopo completo está no RF023 dos [requisitos do projeto](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI/blob/main/docs/REQUISITOS.md) e na [passagem de bastão](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI/blob/main/docs/PASSAGEM-DE-BASTAO.md).
