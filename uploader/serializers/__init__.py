@@ -1,2 +1,2 @@
-from .document import DocumentSerializer, DocumentUploadSerializer
+from .document import DocumentUploadSerializer
 from .image import ImageSerializer, ImageUploadSerializer

@@ -218,10 +218,8 @@ UPLOADER_MAX_BYTES_PER_USER = 100 * 1024 * 1024
 
 
 # Configurações específicas para desenvolvimento, migração e produção
-if MODE == 'DEVELOPMENT':
-    MEDIA_URL = '/media/'
-else:
-    MEDIA_URL = '/media/'
+MEDIA_URL = '/media/'
+if MODE != 'DEVELOPMENT':
     CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STORAGES = {

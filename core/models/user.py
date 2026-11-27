@@ -2,8 +2,6 @@
 Database models.
 """
 
-import random
-
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,

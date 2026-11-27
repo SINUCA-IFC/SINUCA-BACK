@@ -1,371 +1,140 @@
-# SINUCA — Back-end
+# SINUCA — Backend
 
-API do **Simulado Interdisciplinar das Nações Unidas do Campus Araquari (SINUCA)**, projeto do Instituto Federal Catarinense.
+API do Simulado Interdisciplinar das Nações Unidas do Campus Araquari. Usa Django, Django REST Framework, ORM, allauth, JWT, PostgreSQL/SQLite, Cloudinary, WhiteNoise e Web Push com VAPID.
 
-O sistema apoia a organização do evento e a comunicação com os participantes, centralizando delegações, tarefas, cronogramas, notícias e materiais de apoio.
+- [Passagem de bastão](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI/blob/main/docs/PASSAGEM-DE-BASTAO.md).
+- [Documentação central do projeto](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI).
+- [Contrato de autenticação](docs/django-allauth.md).
+- [Operação de notificações](docs/NOTIFICACOES.md).
 
-A interface web está no [SINUCA-FRONT](https://github.com/SINUCA-IFC/SINUCA-FRONT).
+## Situação funcional
 
-Veja o [contrato de autenticação](docs/django-allauth.md) para Google, JWT e confirmação de e-mail por código de 6 dígitos.
+Há usuários, países/delegações, turmas, categorias, tarefas, cronogramas, links, postagens, mensagens/leitura por usuário, uploads e inscrições push. O cadastro público cria alunos, exige confirmação de e-mail e aguarda atribuição de país pela organização. Papéis e privilégios são controlados no servidor.
 
-## Funcionalidades
+O papel `evaluator` existe, mas **lançamento de notas, médias e painel de avaliação ainda não existem**. A retirada de participante também precisa ser concluída: o frontend chama `remover-delegacao`, ação ausente no backend atual. Consulte o documento de passagem de bastão para pendências e requisitos futuros.
 
-- Autenticação JWT com login por e-mail e Google.
-- Confirmação obrigatória de e-mail por código de 6 dígitos.
-- Cadastro público de alunos.
-- Aprovação com atribuição de delegação pela organização.
-- Perfis de aluno, avaliador e organizador.
-- Gestão de países, turmas, categorias e postagens.
-- Tarefas com responsáveis e prazos.
-- Cronogramas e materiais de apoio.
-- Mensagens entre a organização e as delegações.
-- Upload de imagens e documentos.
-- Notificações Web Push.
-- Administração pelo Django Admin.
-- Documentação OpenAPI com Swagger UI e ReDoc.
+## Preparar o ambiente local
 
-O perfil de avaliador existe no modelo de usuário, mas um módulo de atribuição de notas às delegações não está implementado nesta versão. A disponibilidade dos recursos na interface depende da versão do front-end.
+`runtime.txt` indica Python 3.13; `pyproject.toml` declara `>=3.10`. Padronizar uma versão entre a equipe e o servidor antes de mudar as dependências.
 
-## Tecnologias
+No curso, usamos somente PDM, com ambientes virtuais desativados. Com Python e PDM instalados, executar `deactivate` caso exista um ambiente virtual ativo no terminal e preparar o projeto:
 
-| Tecnologia | Finalidade |
-| --- | --- |
-| Python / Django | Aplicação e modelos |
-| Django REST Framework | API REST |
-| Simple JWT | Autenticação JWT |
-| django-allauth | Cadastro, confirmação de e-mail e Google |
-| drf-spectacular | Documentação OpenAPI |
-| SQLite / PostgreSQL | Banco de dados |
-| Cloudinary | Armazenamento de mídia em produção |
-| WhiteNoise | Arquivos estáticos |
-| pywebpush | Notificações |
-| Gunicorn | Servidor WSGI |
-| PDM | Dependências e tarefas |
-
-As dependências estão definidas em `pyproject.toml`, `pdm.lock` e `requirements.txt`. O `requirements.txt` é gerado pelo PDM.
-
-## Pré-requisitos
-
-- Git.
-- Python 3.13, conforme `runtime.txt`.
-- pip e suporte a ambientes virtuais, ou PDM.
-- Biblioteca `libmagic` no Linux para identificação de arquivos.
-
-O `pyproject.toml` declara Python >= 3.10; a compatibilidade efetiva também depende das versões travadas das dependências.
-
-Em Debian/Ubuntu, quando necessário:
-
-```bash
-sudo apt-get install libmagic1
-```
-
-O banco padrão é SQLite. PostgreSQL pode ser configurado por `DATABASE_URL`.
-
-## Instalação
-
-```bash
+```sh
 git clone https://github.com/SINUCA-IFC/SINUCA-BACK.git
 cd SINUCA-BACK
-python -m venv .venv
+pdm config --local python.use_venv false
+pdm install
 ```
 
-Ative o ambiente virtual:
+Executar os comandos locais com `pdm run`, usando as dependências gerenciadas pelo PDM.
 
-```bash
-# Linux / macOS
-source .venv/bin/activate
-```
+No Linux, a identificação de conteúdo dos arquivos pode exigir `libmagic1` instalado pelo sistema. `requirements.txt` é gerado pelo PDM; não atualizar suas versões isoladamente de `pyproject.toml` e `pdm.lock`.
 
-```powershell
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-```
-
-Instale as dependências:
-
-```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-## Configuração
-
-A aplicação carrega o arquivo `.env` da raiz com `python-dotenv`. Edite os valores para o ambiente local:
+Criar `.env` local, sem conexão com produção:
 
 ```dotenv
 MODE=DEVELOPMENT
 DEBUG=True
-SECRET_KEY=substitua-por-uma-chave-local-aleatoria
+SECRET_KEY=preencha-com-uma-chave-local-aleatoria
 DATABASE_URL=sqlite:///db.sqlite3
 FRONTEND_URL=http://localhost:5173
+FRONTEND_ALLOWED_ORIGINS=
+AUTH_CROSS_SITE_COOKIES=False
+AUTH_COOKIE_SECURE=False
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 ```
 
-Gere uma chave com:
+Gerar a chave com `pdm run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`. O e-mail de console mostra o código no terminal e não envia mensagens. Não versionar `.env`. O arquivo `.env.example` descreve configuração de deploy, não uma base SQLite local pronta.
 
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
-| Variável | Finalidade |
-| --- | --- |
-| `MODE` | `DEVELOPMENT` seleciona armazenamento local de mídia |
-| `DEBUG` | Ativa depuração; padrão: `False` |
-| `SECRET_KEY` | Chave do Django |
-| `DATABASE_URL` | Conexão com o banco |
-| `FRONTEND_URL` | Origem do frontend para CORS, CSRF e retornos da autenticação |
-| `CLOUDINARY_URL` | Configuração de mídia fora do modo de desenvolvimento |
-| `VAPID_PUBLIC_KEY` | Chave pública Web Push |
-| `VAPID_PRIVATE_KEY` | Chave privada VAPID ou caminho absoluto do PEM |
-| `VAPID_SUBJECT` | Contato do serviço push, como `mailto:contato@seu-dominio.com` |
-
-Mantenha senhas e chaves privadas fora de commits.
-
-### Mídia em desenvolvimento
-
-Em desenvolvimento, `MEDIA_URL` é `/media/`. O servidor local disponibiliza os uploads nesse caminho.
-
-## Banco de dados e execução
-
-```bash
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver localhost:8000
-```
-
-A autenticação do superusuário utiliza e-mail.
-
-| Endereço | Finalidade |
-| --- | --- |
-| http://localhost:8000/admin/ | Administração |
-| http://localhost:8000/api/ | Raiz da API |
-| http://localhost:8000/api/doc/ | Swagger UI |
-| http://localhost:8000/api/redoc/ | ReDoc |
-| http://localhost:8000/api/schema/ | Esquema OpenAPI |
-
-Cadastre países, turmas e demais dados iniciais pelo Admin.
-
-Para integrar o front-end local, configure o Axios para utilizar `http://localhost:8000/api`.
-
-## Autenticação
-
-Veja o [contrato de autenticação](docs/django-allauth.md) para Google, JWT e confirmação de e-mail por código de 6 dígitos.
-
-Solicite os tokens utilizando uma conta existente com e-mail confirmado:
-
-```bash
-curl -X POST http://localhost:8000/api/token/ \
-  -H "Content-Type: application/json" \
-  -d '{"email":"usuario@example.com","password":"sua-senha"}'
-```
-
-A resposta contém `access` e `refresh`.
-
-Nas requisições autenticadas, envie:
-
-```http
-Authorization: Bearer <access>
-```
-
-### Aprovação de alunos
-
-O cadastro público cria um aluno sem país, com aprovação pendente.
-
-Organizadores e superusuários podem consultar:
-
-```http
-GET /api/usuarios/pendentes/
-```
-
-Para atribuir uma delegação:
-
-```http
-POST /api/usuarios/{id}/aprovar/
-Content-Type: application/json
-
-{"country": 1}
-```
-
-A aprovação atribui a delegação. Alunos sem delegação possuem restrições de escrita.
-
-## Endpoints principais
-
-| Caminho | Recurso |
-| --- | --- |
-| `/api/token/` | Obtenção de tokens |
-| `/api/token/refresh/` | Renovação do token |
-| `/api/token/verify/` | Verificação do token |
-| `/api/registro/` | Cadastro de aluno |
-| `/api/usuarios/` | Usuários |
-| `/api/usuarios/me/` | Usuário autenticado |
-| `/api/usuarios/pendentes/` | Alunos aguardando delegação |
-| `/api/usuarios/{id}/aprovar/` | Atribuição de delegação |
-| `/api/paises/` | Países |
-| `/api/turmas/` | Turmas |
-| `/api/categorias/` | Categorias |
-| `/api/postagens/` | Postagens |
-| `/api/tarefas/` | Tarefas |
-| `/api/cronogramas/` | Cronogramas |
-| `/api/docs/` | Links e materiais |
-| `/api/mensagens/` | Mensagens |
-| `/api/media/images/` | Upload de imagens |
-| `/api/media/documents/` | Upload de documentos |
-| `/api/vapid-public-key/` | Chave pública VAPID |
-| `/api/push-subscriptions/` | Inscrições Web Push |
-
-Consulte o Swagger para métodos, campos, ações e permissões. As listagens utilizam paginação com tamanho padrão de 10 itens.
-
-## Notificações Web Push
-
-Configure o par de chaves VAPID no ambiente do back-end. A chave privada deve permanecer somente no servidor.
-
-Os eventos incluem:
-
-- Criação de postagens.
-- Atribuição de tarefas.
-- Novas mensagens.
-- Tarefas atrasadas.
-
-A verificação de atrasos depende da execução periódica de:
-
-```bash
-python manage.py notify_overdue_tasks
-```
-
-O comando não configura um agendador automaticamente.
-
-Consulte [docs/NOTIFICACOES.md](docs/NOTIFICACOES.md) para geração de chaves, configuração, agendamento e testes. O recebimento também exige um cliente com suporte a push e autorização do usuário.
-
-## Verificações
-
-Com o ambiente configurado:
-
-```bash
-python manage.py check
-python manage.py test
-python manage.py makemigrations --check --dry-run
-```
-
-A suíte contém testes de permissões, aprovação, mensagens, tarefas, paginação, uploads e notificações.
-
-### Alternativa com PDM
-
-```bash
-pdm install
-pdm run python manage.py migrate
-pdm run python manage.py runserver localhost:8000
-pdm run test
-pdm run check
-```
-
-`pdm run check` executa o Ruff.
-
-O script `pdm run migrate` também gera migrações e um diagrama por meio de hooks. Utilize `pdm run python manage.py migrate` para apenas aplicar as migrações existentes.
-
-## Estrutura
-
-```text
-app/                     Configurações e URLs
-core/
-  management/commands/   Comandos administrativos
-  migrations/            Migrações do domínio
-  models/                Modelos
-  serializers/           Serialização e validação
-  services/              Serviços de notificações
-  tests/                 Testes automatizados
-  views/                 Endpoints
-uploader/                Uploads e validação de arquivos
-docs/                    Documentação complementar
-scripts/                 Utilitários
-manage.py                Comandos Django
-pyproject.toml           Dependências e tarefas PDM
-requirements.txt         Dependências exportadas
-Procfile                 Processos web e release
-build.sh                 Instalação, estáticos e migrações
-```
-
-## Publicação
-
-O `Procfile` utiliza Gunicorn para servir `app.wsgi` e define uma etapa de release para aplicar migrações.
-
-O `build.sh` instala dependências, coleta arquivos estáticos e aplica migrações.
-
-Configure no ambiente de destino:
-
-- `SECRET_KEY` própria.
-- `DEBUG=False`.
-- `DATABASE_URL`.
-- `MODE=DEPLOY`.
-- `CLOUDINARY_URL` para o armazenamento padrão de produção.
-- Chaves VAPID, se forem utilizadas notificações.
-- HTTPS.
-
-As configurações estão em `app/settings.py`. Restrinja `ALLOWED_HOSTS` aos hosts da implantação; CORS e CSRF utilizam a origem definida por `FRONTEND_URL`.
-
-## Deploy em dev
-
-Configure as variáveis de ambiente diretamente no painel do provedor de hospedagem.
-Use `MODE=DEPLOY` e `DEBUG=False`; `DEVELOPMENT`
-é reservado à execução local. O banco remoto deve ser PostgreSQL, com backup
-antes das migrações de um banco existente. Não envie `.env`, banco SQLite,
-dump, mídia local ou `.secrets` para o servidor.
-
-Configure SMTP e um remetente autorizado: a confirmação obrigatória de e-mail
-depende de entrega real. No Google Cloud, cadastre o callback
-`https://<host-do-backend>/accounts/google/login/callback/`.
-`FRONTEND_URL` deve ser a origem HTTPS exata do frontend, sem caminho.
-Para autenticação por cookies, prefira front e API no mesmo site (subdomínios
-do mesmo domínio); domínios distintos exigem configuração adicional de cookies.
-
-O build é `bash build.sh` e o início é `gunicorn app.wsgi --log-file -`.
-O build instala dependências, coleta estáticos e aplica migrações.
-O `Procfile` também oferece migração na fase release para provedores que a suportam.
-
-Valide com as variáveis do ambiente configuradas:
+As opções de cookies acima são necessárias para HTTP local: o modo cross-site exige cookies seguros/HTTPS. Para testar Google localmente, configurar também cliente OAuth/callback e seguir o contrato de autenticação.
 
 ```sh
-python manage.py check --deploy
-python manage.py makemigrations --check --dry-run
-python manage.py test
+pdm run migrate
+pdm run createsuperuser
+pdm run dev
 ```
 
-Após o deploy, valide cadastro, recebimento do código por e-mail, login e Google.
-Os testes automatizados de autenticação permanecem no projeto como proteção
-contra regressões e não são executados pelo servidor web.
+O superusuário usa e-mail como login. Criar países, turmas, categorias e contas controladas em `http://127.0.0.1:8000/admin/`. O `role` organizador e as flags `is_staff`/`is_superuser` não são equivalentes. Não há carga completa homologada do evento; o script antigo incompatível foi retirado.
 
-## Referências
+No frontend, usar `VITE_API_BASE_URL=http://localhost:8000` em `.env.local`, mantendo o Axios em `/api`. O proxy do Vite encaminha as chamadas; não é necessário editar o Axios para trocar de ambiente.
 
-- [Front-end](https://github.com/SINUCA-IFC/SINUCA-FRONT)
-- [Organização SINUCA-IFC](https://github.com/SINUCA-IFC)
-- [Documento do projeto](https://docs.google.com/document/d/17GRwIq2vJa5Fo7NMv2ppM04NwbgOPGmEZtuLE4Cn_as/edit)
+## Código e contratos
 
-## Licença
-
-O `pyproject.toml` declara licença MIT.
-
-## Vercel / Fabroku
-
-Set these environment variables in the backend deployment panel, then restart:
-
-```dotenv
-FRONTEND_URL=https://sinuca-ifc-mocha.vercel.app
-AUTH_CROSS_SITE_COOKIES=True
-AUTH_COOKIE_SECURE=True
-FRONTEND_ALLOWED_ORIGINS=
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=sinuca.ifc.no.reply@gmail.com
-DEFAULT_FROM_EMAIL="SINUCA <sinuca.ifc.no.reply@gmail.com>"
-EMAIL_USE_TLS=True
-EMAIL_USE_SSL=False
+```text
+app/                       settings, URLs, paginação e configurações de teste
+core/
+  models/                  entidades e relações
+  serializers/             validação e representação
+  views/                   endpoints, permissões e escopo
+  permissions.py           regras por perfil/objeto
+  services/                eventos e transporte de notificações
+  management/commands/     comando de tarefas atrasadas
+  migrations/              histórico do schema
+  tests/ e test_*.py       regressões
+uploader/                  arquivos próprios, limites, validação e uploads
 ```
 
-FRONTEND_URL is the exact allowed CORS/CSRF origin and Google return destination.
-AUTH_CROSS_SITE_COOKIES enables SameSite=None with Secure cookies for this
-cross-site deployment. It requires HTTPS and does not bypass CSRF or authorize
-other origins. Browser third-party cookie blocking can still prevent OAuth;
-a frontend hosted on the same site as the API avoids that restriction.
-When moving the frontend, update FRONTEND_URL and review this cookie setting.
+Manter a estrutura ensinada no tutorial DRF. Não reimplementar cadastro fora do allauth nem substituir viewsets simples por uma hierarquia própria. Não apagar migrações de bancos existentes.
 
-Configure EMAIL_HOST_PASSWORD only in the deployment panel using a Gmail app password.
-Full deployment instructions: [authentication](docs/django-allauth.md#configuração-do-deploy).
+| Endpoint | Uso |
+| --- | --- |
+| `/api/token/`, `/api/token/refresh/`, `/api/token/verify/` | JWT. |
+| `/api/registro/`, `/api/registro/confirmar-email/`, `/api/registro/reenviar-codigo/` | Cadastro e código real de e-mail. |
+| `/api/auth/csrf/`, `/api/auth/google/`, `/api/token/session/`, `/api/auth/logout/` | Sessão Google e troca por JWT. |
+| `/api/usuarios/me/`, `/api/usuarios/pendentes/`, `/api/usuarios/{id}/aprovar/` | Perfil e atribuição de país. |
+| `/api/paises/`, `/api/turmas/`, `/api/categorias/` | Cadastros. |
+| `/api/postagens/`, `/api/tarefas/`, `/api/cronogramas/`, `/api/docs/` | Conteúdo e atividades com permissões próprias. |
+| `/api/mensagens/` e ações `conversas`, `lidas`, `nao-lidas` | Chat e leitura por usuário/delegação. |
+| `/api/media/images/`, `/api/media/documents/` | Upload autenticado. |
+| `/api/vapid-public-key/`, `/api/push-subscriptions/` | Web Push. |
+| `/api/schema/`, `/api/doc/`, `/api/redoc/` | OpenAPI, Swagger e ReDoc. |
+
+A barra final importa. Listas retornam `results`, `page`, `page_size` e `total_pages`; padrão de dez itens. JWT usa `Authorization: Bearer <access>`. `docs` representa links compartilhados; upload de PDF é infraestrutura distinta e ainda não está conectado ao formulário de documentos da delegação.
+
+## Testar sem usar o banco real
+
+```sh
+pdm run python manage.py test --settings=app.settings_test --noinput
+pdm run python manage.py check --settings=app.settings_test
+pdm run python manage.py makemigrations --check --dry-run --settings=app.settings_test
+```
+
+Essa configuração ignora `.env`, usa SQLite em memória, e-mail de teste e armazenamento temporário. O aviso de VAPID vazia é esperado nesse modo. Testes locais não comprovam PostgreSQL, entrega SMTP/push, Google ou configuração publicada.
+
+OpenAPI ainda tem pendências de introspecção, especialmente endpoints push e serializers com relações. Conferir as mensagens de `spectacular --validate`; exit code 0 sozinho não significa schema sem problemas.
+
+## Comandos de manutenção com PDM
+
+Executar conforme necessário; criar migrações somente após alterar os modelos e revisar os arquivos gerados antes de aplicá-los:
+
+```sh
+pdm run makemigrations
+pdm run migrate
+pdm run diagram
+```
+
+Para adicionar ou remover dependências, usar `pdm add` ou `pdm remove` e revisar `pyproject.toml`, `pdm.lock` e a exportação `requirements.txt`.
+
+`dev` inicia o servidor. `makemigrations` cria migrações, `migrate` aplica as existentes e `diagram` gera diagrama com django-extensions/Graphviz. São comandos independentes: iniciar o servidor não reescreve `.env` e aplicar migrações não cria schema nem imagem implicitamente. Usar `pdm run python manage.py test --settings=app.settings_test --noinput` para testes isolados.
+
+`pdm run check` executa o Ruff configurado. `pdm run format` inclui correção automática; revisar o diff antes de manter uma reformatação ampla.
+
+## Produção e operação
+
+A API publicada é `https://sinuca-backend.class.fabricadesoftware.ifc.edu.br`. Configurar no painel do servidor, sem versionar valores secretos:
+
+- `MODE=DEPLOY`, `DEBUG=False`, `SECRET_KEY` própria e PostgreSQL em `DATABASE_URL`.
+- `CLOUDINARY_URL` para mídia; estáticos servidos por WhiteNoise.
+- SMTP, remetente autorizado e senha de aplicativo para confirmação real de e-mail.
+- Google client ID/secret e callback `https://<backend>/accounts/google/login/callback/`.
+- `FRONTEND_URL=https://sinuca-ifc-mocha.vercel.app`; origens extras somente quando necessárias em `FRONTEND_ALLOWED_ORIGINS`.
+- `AUTH_COOKIE_SECURE=True` e, na topologia entre sites distintos, `AUTH_CROSS_SITE_COOKIES=True`. CORS/CSRF continuam obrigatórios; bloqueio de cookies de terceiros pode impedir o Google.
+- Par VAPID e `VAPID_SUBJECT` para push. Chave privada fica no servidor.
+
+A configuração ainda possui fallback de chave e hosts amplos: revisar antes de uso real. `TRUST_PROXY_HTTPS` só deve ser ativado se o proxy sobrescrever corretamente o header. Mais detalhes no contrato de autenticação.
+
+O processo web é `gunicorn app.wsgi --log-file -`. `build.sh` instala dependências, coleta estáticos e aplica migrações; o `Procfile` também prevê migrações na fase release. Confirmar qual fase o provedor usa, fazer backup e testar restauração antes de mudanças em produção.
+
+Agendar externamente `pdm run python manage.py notify_overdue_tasks`. O comando não instala cron automaticamente. Conferir entrega em navegadores/aparelhos inscritos, sem confundir resposta do provedor com exibição da notificação.
+
+Após publicar, validar com contas de teste e API real: cadastro, código/reenvio, login/Google, aprovação, tarefas, recursos, chat e push. Registrar commits, migrações e resultados. Registrar os resultados de homologação por versão na documentação central.
