@@ -2,7 +2,7 @@
 
 API do Simulado Interdisciplinar das Nações Unidas do Campus Araquari. Usa Django, Django REST Framework, ORM, allauth, JWT, PostgreSQL/SQLite, Cloudinary, WhiteNoise e Web Push com VAPID.
 
-- [Frontend e passagem de bastão](https://github.com/SINUCA-IFC/SINUCA-FRONT/blob/main/docs/PASSAGEM-DE-BASTAO.md).
+- [Passagem de bastão](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI/blob/main/docs/PASSAGEM-DE-BASTAO.md).
 - [Documentação central do projeto](https://github.com/SINUCA-IFC/SINUCA-Documentacao-PI).
 - [Contrato de autenticação](docs/django-allauth.md).
 - [Operação de notificações](docs/NOTIFICACOES.md).
@@ -17,15 +17,16 @@ O papel `evaluator` existe, mas **lançamento de notas, médias e painel de aval
 
 `runtime.txt` indica Python 3.13; `pyproject.toml` declara `>=3.10`. Esta revisão foi testada com Python 3.14.9. Padronizar uma versão entre a equipe e o servidor antes de mudar as dependências.
 
+No curso, usamos somente PDM, com ambientes virtuais desativados. Com Python e PDM instalados, executar `deactivate` caso exista um ambiente virtual ativo no terminal e preparar o projeto:
+
 ```sh
 git clone https://github.com/SINUCA-IFC/SINUCA-BACK.git
 cd SINUCA-BACK
-python -m venv .venv
-# Linux/macOS
-source .venv/bin/activate
-# Windows PowerShell: .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+pdm config --local python.use_venv false
+pdm install
 ```
+
+Executar os comandos locais com `pdm run`, usando as dependências gerenciadas pelo PDM.
 
 No Linux, a identificação de conteúdo dos arquivos pode exigir `libmagic1` instalado pelo sistema. `requirements.txt` é gerado pelo PDM; não atualizar suas versões isoladamente de `pyproject.toml` e `pdm.lock`.
 
@@ -43,17 +44,17 @@ AUTH_COOKIE_SECURE=False
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 ```
 
-Gerar a chave com `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`. O e-mail de console mostra o código no terminal e não envia mensagens. Não versionar `.env`. O arquivo `.env.example` descreve configuração de deploy, não uma base SQLite local pronta.
+Gerar a chave com `pdm run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`. O e-mail de console mostra o código no terminal e não envia mensagens. Não versionar `.env`. O arquivo `.env.example` descreve configuração de deploy, não uma base SQLite local pronta.
 
 As opções de cookies acima são necessárias para HTTP local: o modo cross-site exige cookies seguros/HTTPS. Para testar Google localmente, configurar também cliente OAuth/callback e seguir o contrato de autenticação.
 
 ```sh
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver localhost:8000
+pdm run migrate
+pdm run createsuperuser
+pdm run dev
 ```
 
-O superusuário usa e-mail como login. Criar países, turmas, categorias e contas controladas em `http://localhost:8000/admin/`. O `role` organizador e as flags `is_staff`/`is_superuser` não são equivalentes. Não há carga completa homologada do evento; o script antigo incompatível foi retirado.
+O superusuário usa e-mail como login. Criar países, turmas, categorias e contas controladas em `http://127.0.0.1:8000/admin/`. O `role` organizador e as flags `is_staff`/`is_superuser` não são equivalentes. Não há carga completa homologada do evento; o script antigo incompatível foi retirado.
 
 No frontend, usar `VITE_API_BASE_URL=http://localhost:8000` em `.env.local`, mantendo o Axios em `/api`. O proxy do Vite encaminha as chamadas; não é necessário editar o Axios para trocar de ambiente.
 
@@ -93,24 +94,26 @@ A barra final importa. Listas retornam `results`, `page`, `page_size` e `total_p
 ## Testar sem usar o banco real
 
 ```sh
-python manage.py test --settings=app.settings_test --noinput
-python manage.py check --settings=app.settings_test
-python manage.py makemigrations --check --dry-run --settings=app.settings_test
+pdm run python manage.py test --settings=app.settings_test --noinput
+pdm run python manage.py check --settings=app.settings_test
+pdm run python manage.py makemigrations --check --dry-run --settings=app.settings_test
 ```
 
 Essa configuração ignora `.env`, usa SQLite em memória, e-mail de teste e armazenamento temporário. A suíte atual tem 185 testes. O aviso de VAPID vazia é esperado nesse modo. Testes locais não comprovam PostgreSQL, entrega SMTP/push, Google ou configuração publicada.
 
 OpenAPI ainda tem pendências de introspecção, especialmente endpoints push e serializers com relações. Conferir as mensagens de `spectacular --validate`; exit code 0 sozinho não significa schema sem problemas.
 
-## Alternativa com PDM
+## Comandos de manutenção com PDM
+
+Executar conforme necessário; criar migrações somente após alterar os modelos e revisar os arquivos gerados antes de aplicá-los:
 
 ```sh
-pdm install
-pdm run dev
 pdm run makemigrations
 pdm run migrate
 pdm run diagram
 ```
+
+Para adicionar ou remover dependências, usar `pdm add` ou `pdm remove` e revisar `pyproject.toml`, `pdm.lock` e a exportação `requirements.txt`.
 
 `dev` inicia o servidor. `makemigrations` cria migrações, `migrate` aplica as existentes e `diagram` gera diagrama com django-extensions/Graphviz. São comandos independentes: iniciar o servidor não reescreve `.env` e aplicar migrações não cria schema nem imagem implicitamente. Usar `pdm run python manage.py test --settings=app.settings_test --noinput` para testes isolados.
 
